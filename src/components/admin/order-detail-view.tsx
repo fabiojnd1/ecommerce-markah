@@ -19,6 +19,7 @@ import {
   RotateCcw,
   ExternalLink,
   ShieldAlert,
+  Trash2,
 } from "lucide-react";
 import { formatCents } from "@/lib/pricing";
 import { OrderStatusBadge } from "./order-status-badge";
@@ -27,6 +28,7 @@ import {
   updateOrderTrackingAction,
   saveInternalNotesAction,
   refundOrderAction,
+  deleteOrderAction,
 } from "@/server/admin-order-actions";
 import type { OrderRecord } from "@/lib/orders-repository";
 
@@ -56,11 +58,30 @@ export function OrderDetailView({ initialOrder }: OrderDetailViewProps) {
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [isDispatching, setIsDispatching] = useState(false);
   const [isRefunding, setIsRefunding] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
   const [copiedTracking, setCopiedTracking] = useState(false);
+
+  async function handleDeleteOrder() {
+    if (!window.confirm(`Deseja realmente excluir permanentemente o pedido ${order.orderNumber}? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      const res = await deleteOrderAction(order.id);
+      if (res.success) {
+        router.push("/admin/pedidos");
+        router.refresh();
+      } else {
+        alert(res.error || "Erro ao excluir pedido.");
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   const isCanceledOrRefunded =
     order.status === "CANCELADO" || order.status === "REEMBOLSADO";
@@ -636,6 +657,25 @@ export function OrderDetailView({ initialOrder }: OrderDetailViewProps) {
                 </p>
               )}
             </div>
+          </div>
+
+          {/* Exclusão do Pedido */}
+          <div className="bg-surface rounded-card border border-red-200 p-5 shadow-subtle space-y-2 text-xs">
+            <h2 className="text-xs uppercase font-mono tracking-wider text-red-700 font-bold">
+              Zona de Exclusão
+            </h2>
+            <p className="text-[11px] text-text-muted">
+              Remova este pedido de teste permanentemente do banco de dados.
+            </p>
+            <button
+              type="button"
+              onClick={handleDeleteOrder}
+              disabled={isDeleting}
+              className="w-full mt-2 py-2 px-3 rounded-lg border border-red-300 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>{isDeleting ? "Excluindo..." : "Excluir Pedido"}</span>
+            </button>
           </div>
         </div>
       </div>

@@ -917,3 +917,43 @@ export async function markWebhookEventProcessed(
   }
 }
 
+/**
+ * Exclui um pedido do banco de dados e da memória.
+ */
+export async function deleteOrder(orderId: string): Promise<boolean> {
+  try {
+    if (isDatabaseConfigured()) {
+      await db.order.delete({
+        where: { id: orderId },
+      });
+      return true;
+    }
+  } catch (err) {
+    assertDevFallbackAllowed(err);
+  }
+
+  inMemoryOrders.delete(orderId);
+  inMemoryOrderItems.delete(orderId);
+  return true;
+}
+
+/**
+ * Limpa todos os pedidos do sistema (banco de dados e memória).
+ */
+export async function clearAllOrders(): Promise<number> {
+  let count = 0;
+  try {
+    if (isDatabaseConfigured()) {
+      const res = await db.order.deleteMany({});
+      count = res.count;
+      await db.webhookEvent.deleteMany({});
+    }
+  } catch (err) {
+    assertDevFallbackAllowed(err);
+  }
+
+  inMemoryOrders.clear();
+  inMemoryOrderItems.clear();
+  return count;
+}
+

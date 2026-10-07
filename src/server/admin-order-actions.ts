@@ -10,6 +10,8 @@ import {
   updateOrderTracking,
   updateOrderInternalNotes,
   getOrderMetrics,
+  deleteOrder,
+  clearAllOrders,
   type ListOrdersOptions,
 } from "@/lib/orders-repository";
 import { sendOrderShippedEmail } from "@/lib/email/resend";
@@ -208,4 +210,35 @@ export async function refundOrderAction(orderId: string, reason?: string) {
 export async function getAdminMetricsAction() {
   await requireAdmin();
   return await getOrderMetrics();
+}
+
+/**
+ * Server Action: Exclui um pedido individual do sistema.
+ * Regra P-007: Exige requireAdmin().
+ */
+export async function deleteOrderAction(orderId: string) {
+  await requireAdmin();
+
+  const success = await deleteOrder(orderId);
+  if (!success) {
+    return { success: false, error: "Falha ao excluir pedido." };
+  }
+
+  revalidatePath("/admin/pedidos");
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+/**
+ * Server Action: Limpa todos os pedidos do sistema.
+ * Regra P-007: Exige requireAdmin().
+ */
+export async function clearAllOrdersAction() {
+  await requireAdmin();
+
+  const deletedCount = await clearAllOrders();
+
+  revalidatePath("/admin/pedidos");
+  revalidatePath("/admin");
+  return { success: true, count: deletedCount };
 }

@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   Search,
   ArrowRight,
@@ -10,9 +11,11 @@ import {
   CreditCard,
   QrCode,
   Package,
+  Trash2,
 } from "lucide-react";
 import { formatCents } from "@/lib/pricing";
 import { OrderStatusBadge } from "./order-status-badge";
+import { deleteOrderAction, clearAllOrdersAction } from "@/server/admin-order-actions";
 import type { OrderRecord } from "@/lib/orders-repository";
 
 interface OrdersTableProps {
@@ -31,11 +34,51 @@ const STATUS_FILTERS = [
 ];
 
 export function OrdersTable({ initialOrders }: OrdersTableProps) {
+  const router = useRouter();
+  const [ordersList, setOrdersList] = useState<OrderRecord[]>(initialOrders);
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isClearing, setIsClearing] = useState(false);
+
+  async function handleDeleteOrder(orderId: string, orderNumber: string) {
+    if (!window.confirm(`Deseja realmente excluir o pedido ${orderNumber}? Esta ação removerá o pedido permanentemente.`)) {
+      return;
+    }
+    setDeletingId(orderId);
+    try {
+      const res = await deleteOrderAction(orderId);
+      if (res.success) {
+        setOrdersList((prev) => prev.filter((o) => o.id !== orderId));
+        router.refresh();
+      } else {
+        alert(res.error || "Erro ao excluir pedido.");
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  async function handleClearAllOrders() {
+    if (!window.confirm("Deseja realmente limpar TODOS os pedidos de teste? Esta ação removerá todos os pedidos do banco de dados.")) {
+      return;
+    }
+    setIsClearing(true);
+    try {
+      const res = await clearAllOrdersAction();
+      if (res.success) {
+        setOrdersList([]);
+        router.refresh();
+      } else {
+        alert("Erro ao limpar pedidos.");
+      }
+    } finally {
+      setIsClearing(false);
+    }
+  }
 
   const filteredOrders = useMemo(() => {
-    return initialOrders.filter((order) => {
+    return ordersList.filter((order) => {
       // Filtro de status
       if (selectedStatus !== "ALL" && order.status !== selectedStatus) {
         return false;
@@ -57,7 +100,7 @@ export function OrdersTable({ initialOrders }: OrdersTableProps) {
 
       return true;
     });
-  }, [initialOrders, selectedStatus, searchQuery]);
+  }, [ordersList, selectedStatus, searchQuery]);
 
   return (
     <div className="space-y-4">
@@ -98,16 +141,32 @@ export function OrdersTable({ initialOrders }: OrdersTableProps) {
           })}
         </div>
 
-        {/* Input de busca */}
-        <div className="relative min-w-[260px] shrink-0">
-          <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Buscar por #pedido, cliente, CPF ou rastreio..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-border bg-surface focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink placeholder:text-text-muted"
-          />
+        {/* Ações da Barra: Botão Limpar Testes e Busca */}
+        <div className="flex items-center gap-2">
+          {ordersList.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClearAllOrders}
+              disabled={isClearing}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+              title="Excluir todos os pedidos de teste"
+            >
+              <Trash2 className="w-3.5 h-3.5 shrink-0" />
+              <span>{isClearing ? "Limpando..." : "Limpar Pedidos de Teste"}</span>
+            </button>
+          )}
+
+          {/* Input de busca */}
+          <div className="relative min-w-[240px] shrink-0">
+            <Search className="w-4 h-4 text-text-muted absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Buscar por #pedido, cliente, CPF..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-border bg-surface focus:outline-none focus:ring-1 focus:ring-ink focus:border-ink placeholder:text-text-muted"
+            />
+          </div>
         </div>
       </div>
 
@@ -244,13 +303,26 @@ export function OrdersTable({ initialOrders }: OrdersTableProps) {
 
                       {/* Ação */}
                       <td className="py-3.5 px-4 text-right">
-                        <Link
-                          href={`/admin/pedidos/${order.id}`}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border text-xs font-semibold text-text hover:bg-surface-alt hover:text-ink transition-colors"
-                        >
-                          <span>Gerenciar</span>
-                          <ArrowRight className="w-3 h-3" />
-                        </Link>
+                        <div className="inline-flex items-center gap-1.5">
+                          <Link
+                            href={`/admin/pedidos/${order.id}`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border text-xs font-semibold text-text hover:bg-surface-alt hover:text-ink transition-colors"
+                          >
+                            <span>Gerenciar</span>
+                            <ArrowRight className="w-3 h-3" />
+                          </Link>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteOrder(order.id, order.orderNumber)}
+                            disabled={deletingId === order.id}
+                            className="p-1.5 rounded-lg border border-border text-text-muted hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-40"
+                            title={`Excluir pedido ${order.orderNumber}`}
+                            aria-label={`Excluir pedido ${order.orderNumber}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
