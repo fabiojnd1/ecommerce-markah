@@ -31,6 +31,15 @@ export interface GalleryPostRecord {
   updatedAt: Date;
 }
 
+interface DynamicDbClient {
+  review?: {
+    findMany: (args?: Record<string, unknown>) => Promise<ReviewRecord[]>;
+  };
+  galleryPost?: {
+    findMany: (args?: Record<string, unknown>) => Promise<GalleryPostRecord[]>;
+  };
+}
+
 export interface ProductRatingStats {
   average: number;
   totalReviews: number;
@@ -212,8 +221,9 @@ export async function getProductReviewsAndStats(productSlug: string): Promise<{
   let reviews: ReviewRecord[] = [];
 
   try {
-    if (isDatabaseConfigured() && (db as any).review) {
-      const dbReviews = await (db as any).review.findMany({
+    const dynamicDb = db as unknown as DynamicDbClient;
+    if (isDatabaseConfigured() && dynamicDb.review) {
+      const dbReviews = await dynamicDb.review.findMany({
         where: {
           productSlug: { in: allowedSlugs },
           status: "APPROVED",
@@ -287,8 +297,9 @@ export async function listAllReviews(status?: string): Promise<ReviewRecord[]> {
   ensureSeedSocialProof();
 
   try {
-    if (isDatabaseConfigured() && (db as any).review) {
-      const dbReviews = await (db as any).review.findMany({
+    const dynamicDb = db as unknown as DynamicDbClient;
+    if (isDatabaseConfigured() && dynamicDb.review) {
+      const dbReviews = await dynamicDb.review.findMany({
         where: status ? { status } : undefined,
         orderBy: { createdAt: "desc" },
       });
@@ -418,8 +429,9 @@ export async function listGalleryPosts(approvedOnly = true): Promise<GalleryPost
   ensureSeedSocialProof();
 
   try {
-    if (isDatabaseConfigured() && (db as any).galleryPost) {
-      const posts = await (db as any).galleryPost.findMany({
+    const dynamicDb = db as unknown as DynamicDbClient;
+    if (isDatabaseConfigured() && dynamicDb.galleryPost) {
+      const posts = await dynamicDb.galleryPost.findMany({
         where: approvedOnly ? { approved: true } : undefined,
         orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }],
       });
