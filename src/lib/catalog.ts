@@ -74,6 +74,84 @@ export async function getProducts(
 ): Promise<SeedProduct[]> {
   let products = [...SEED_PRODUCTS];
 
+  try {
+    if (isDatabaseConfigured()) {
+      const dbProducts = await db.product.findMany({
+        where: {
+          status: "ACTIVE",
+          ...(filters.categorySlug ? { category: { slug: filters.categorySlug } } : {}),
+        },
+        include: {
+          category: true,
+          collections: { include: { collection: true } },
+          images: { orderBy: { displayOrder: "asc" } },
+          options: {
+            orderBy: { displayOrder: "asc" },
+            include: { values: { orderBy: { displayOrder: "asc" } } },
+          },
+          variants: {
+            where: { active: true },
+            include: { optionValues: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (dbProducts.length > 0) {
+        products = dbProducts.map((p) => ({
+          id: p.id,
+          name: p.name,
+          slug: p.slug,
+          description: p.description,
+          categorySlug: p.category.slug,
+          collectionSlugs: p.collections.map((c) => c.collection.slug),
+          material: p.material as "PLA" | "PETG",
+          isSustainable: p.isSustainable,
+          productionDays: p.productionDays,
+          dimensions: p.dimensions || "",
+          weightGrams: p.weightGrams || 350,
+          socketType: p.socketType || undefined,
+          maxWattage: p.maxWattage || undefined,
+          bulbIncluded: p.bulbIncluded,
+          cordLengthCm: p.cordLengthCm || undefined,
+          waterproof: p.waterproof,
+          tags: [],
+          images: p.images.map((img) => ({
+            id: img.id,
+            url: img.url,
+            alt: img.alt,
+            displayOrder: img.displayOrder,
+            isPrimary: img.isPrimary,
+            isHover: img.isHover,
+          })),
+          options: p.options.map((opt) => ({
+            id: opt.id,
+            name: opt.name,
+            values: opt.values.map((val) => ({
+              id: val.id,
+              name: val.name,
+              colorHex: val.colorHex || undefined,
+            })),
+          })),
+          variants: p.variants.map((v) => ({
+            id: v.id,
+            sku: v.sku,
+            priceCents: v.priceCents,
+            compareAtPriceCents: v.compareAtPriceCents,
+            weightGrams: v.weightGrams,
+            packageHeightCm: v.packageHeightCm,
+            packageWidthCm: v.packageWidthCm,
+            packageDepthCm: v.packageDepthCm,
+            active: v.active,
+            selectedOptionValueIds: v.optionValues.map((ov) => ov.optionValueId),
+          })),
+        }));
+      }
+    }
+  } catch (err) {
+    assertDevFallbackAllowed(err);
+  }
+
   // 1. Filtro por Categoria
   if (filters.categorySlug) {
     products = products.filter((p) => p.categorySlug === filters.categorySlug);

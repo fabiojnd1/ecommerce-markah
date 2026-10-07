@@ -212,8 +212,8 @@ export async function getProductReviewsAndStats(productSlug: string): Promise<{
   let reviews: ReviewRecord[] = [];
 
   try {
-    if (isDatabaseConfigured()) {
-      const dbReviews = await db.review.findMany({
+    if (isDatabaseConfigured() && (db as any).review) {
+      const dbReviews = await (db as any).review.findMany({
         where: {
           productSlug: { in: allowedSlugs },
           status: "APPROVED",
@@ -287,8 +287,8 @@ export async function listAllReviews(status?: string): Promise<ReviewRecord[]> {
   ensureSeedSocialProof();
 
   try {
-    if (isDatabaseConfigured()) {
-      const dbReviews = await db.review.findMany({
+    if (isDatabaseConfigured() && (db as any).review) {
+      const dbReviews = await (db as any).review.findMany({
         where: status ? { status } : undefined,
         orderBy: { createdAt: "desc" },
       });
@@ -418,8 +418,8 @@ export async function listGalleryPosts(approvedOnly = true): Promise<GalleryPost
   ensureSeedSocialProof();
 
   try {
-    if (isDatabaseConfigured()) {
-      const posts = await db.galleryPost.findMany({
+    if (isDatabaseConfigured() && (db as any).galleryPost) {
+      const posts = await (db as any).galleryPost.findMany({
         where: approvedOnly ? { approved: true } : undefined,
         orderBy: [{ displayOrder: "asc" }, { createdAt: "desc" }],
       });

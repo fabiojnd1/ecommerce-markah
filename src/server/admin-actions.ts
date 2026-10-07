@@ -619,7 +619,22 @@ export async function duplicateProductAction(productId: string) {
 export async function deleteProductAction(productId: string) {
   await requireAdmin();
 
-  const index = SEED_PRODUCTS.findIndex((p) => p.id === productId);
+  try {
+    if (isDatabaseConfigured()) {
+      const existing = await db.product.findFirst({
+        where: { OR: [{ id: productId }, { slug: productId }] },
+      });
+      if (existing) {
+        await db.product.delete({
+          where: { id: existing.id },
+        });
+      }
+    }
+  } catch (err) {
+    assertDevFallbackAllowed(err);
+  }
+
+  const index = SEED_PRODUCTS.findIndex((p) => p.id === productId || p.slug === productId);
   if (index >= 0) {
     SEED_PRODUCTS.splice(index, 1);
   }
