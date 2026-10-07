@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" fill="none">
+  <rect width="400" height="500" fill="#F1EEE9" />
+  
+  <!-- Cabo têxtil pendente -->
+  <line x1="200" y1="0" x2="200" y2="180" stroke="#1A1A1A" stroke-width="4" />
+  <!-- Soquete de latão / metal -->
+  <rect x="192" y="170" width="16" height="24" rx="2" fill="#D4AF37" stroke="#997D1E" stroke-width="1" />
+
+  <!-- Geometria facetada Origami (Off-White fosco) -->
+  <g stroke="#D4CEC5" stroke-width="1.5" stroke-linejoin="round">
+    <polygon points="200,190 140,270 200,340" fill="#FFFFFF" />
+    <polygon points="200,190 260,270 200,340" fill="#EAE5DC" />
+    <polygon points="200,190 260,270 310,240" fill="#FAF7F2" />
+    <polygon points="200,190 140,270 90,240" fill="#F3EFE9" />
+    <polygon points="140,270 200,340 160,370" fill="#E0D9CE" />
+    <polygon points="260,270 200,340 240,370" fill="#D6CFC3" />
+    <polygon points="200,340 160,370 240,370" fill="#ECE7DE" />
+  </g>
+
+  <!-- Sombra no chão -->
+  <ellipse cx="200" cy="450" rx="60" ry="12" fill="#000000" fill-opacity="0.06" filter="blur(6px)" />
+  <text x="200" y="475" text-anchor="middle" font-family="'Inter', sans-serif" font-size="11" font-weight="600" fill="#6B665F" letter-spacing="0.08em">PENDENTE ORIGAMI · NATURAL</text>
+</svg>

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" fill="none">
+  <!-- Fundo escuro aconchegante para valorizar a luz -->
+  <rect width="400" height="500" fill="#24211E" />
+  
+  <defs>
+    <radialGradient id="saturno-luz" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#FFF3D4" stop-opacity="1" />
+      <stop offset="35%" stop-color="#FFD77A" stop-opacity="0.8" />
+      <stop offset="70%" stop-color="#F26B1D" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#24211E" stop-opacity="0" />
+    </radialGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Brilho difuso da lâmpada acesa -->
+  <circle cx="200" cy="240" r="180" fill="url(#saturno-luz)" />
+  
+  <!-- Base e sombra de contato -->
+  <ellipse cx="200" cy="420" rx="90" ry="16" fill="#000000" fill-opacity="0.4" filter="blur(8px)" />
+  
+  <!-- Corpo da Luminária Saturno (Acesa) -->
+  <g>
+    <!-- Base cônica iluminada -->
+    <path d="M160 410 L170 320 L230 320 L240 410 Z" fill="#9C4E2D" stroke="#7A3C20" stroke-width="1.5" />
+    <ellipse cx="200" cy="410" rx="40" ry="6" fill="#803B1B" />
+
+    <!-- Cúpula Esférica Brilhante (Warm Glow 2700K) -->
+    <circle cx="200" cy="240" r="85" fill="#FFF2CE" filter="url(#glow)" />
+    <circle cx="200" cy="240" r="85" stroke="#FFE18E" stroke-width="2" />
+
+    <!-- Anel orbital de Saturno com silhueta retroiluminada -->
+    <ellipse cx="200" cy="240" rx="140" ry="24" fill="none" stroke="#D97A53" stroke-width="12" transform="rotate(-15 200 240)" />
+  </g>
+  
+  <!-- Tag de status visual discreta -->
+  <text x="200" y="470" text-anchor="middle" font-family="'Inter', sans-serif" font-size="11" font-weight="600" fill="#F7C933" letter-spacing="0.08em">LUMINÁRIA SATURNO · ILUMINADA</text>
+</svg>

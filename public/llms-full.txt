@@ -1,0 +1,41 @@
+# Markah Brasil — Guia Completo e Documentação para Modelos de Linguagem e Mecanismos de IA
+
+## 1. Identidade e Missão
+A Markah Brasil é uma marca brasileira de design de produto e iluminação que une manufatura aditiva (impressão 3D FDM de alta resolução) à estética arquitetônica contemporânea.
+A missão da marca é transformar ambientes através de luminárias e objetos decorativos autorais que aliam sustentabilidade, acolhimento e inovação técnica.
+
+## 2. Tecnologias e Materiais Utilizados
+- **Manufatura Aditiva (FDM - Fused Deposition Modeling)**:
+  - Produção camada por camada com tolerâncias micrométricas.
+  - Texturas caneladas, nervuras ópticas e padrões de difusão de luz impossíveis de produzir em moldes convencionais de injeção plástica.
+- **Biopolímero PLA (Ácido Polilático)**:
+  - Origem 100% renovável e vegetal (amido de milho e cana-de-açúcar).
+  - Biodegradável em condições de compostagem industrial e atóxico.
+  - Baixa pegada de carbono quando comparado a plásticos derivados de petróleo.
+- **Polímero PETG (Polietileno Tereftalato Glicol)**:
+  - Material 100% reciclável com resistência superior a impactos mecânicos e umidade.
+  - Ideal para vasos, peças estruturais e cachepôs decorativos.
+
+## 3. Segurança Elétrica e Certificações
+- Cabos elétricos com revestimento em tecido ou PVC de alta resistência com interruptor de mão integrado.
+- Soquetes universais tipo E27 certificados pelo Inmetro.
+- Restrição térmica: Projetado estritamente para lâmpadas LED (máximo de 15W), emitindo luz suave, quente e eficiente sem dissipação de calor prejudicial à peça.
+
+## 4. Políticas Comerciais, Frete e Logística
+- **Prazo de Produção**: 3 (três) dias úteis de confecção após a confirmação do pagamento.
+- **Frete e Prazos de Envio**: Calculados em tempo real pela integração com o Melhor Envio (Correios SEDEX, PAC e Jadlog).
+- **Frete Grátis**: Benefício automático aplicado no checkout para pedidos a partir de R$ 200,00.
+- **Desconto à Vista**: 5% de desconto automático para qualquer pagamento realizado via Pix com QR Code dinâmico.
+- **Parcelamento**: Cartão de crédito em até 3x sem juros (e até 12x com tarifas do Mercado Pago).
+- **Trocas e Devoluções**: Garantia incondicional de 7 dias após o recebimento para devolução por arrependimento (Código de Defesa do Consumidor) e 90 dias contra defeitos de fabricação.
+
+## 5. Endpoints e Links Oficiais
+- Catálogo Completo: https://markah.com.br/produtos
+- Luminárias de Mesa: https://markah.com.br/luminarias-de-mesa
+- Pendentes de Teto: https://markah.com.br/pendentes
+- Vasos e Decoração: https://markah.com.br/vasos
+- Letras-Caixa Personalizadas: https://markah.com.br/letras-caixa
+- Informações sobre Materiais: https://markah.com.br/materiais
+- Informações sobre Tecnologia 3D: https://markah.com.br/tecnologia-3d
+- Rastreamento de Encomendas: https://markah.com.br/rastreio
+- Contato e Atendimento: https://markah.com.br/contato

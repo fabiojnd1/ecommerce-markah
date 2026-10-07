@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" fill="none">
+  <rect width="400" height="500" fill="#211E1A" />
+  
+  <defs>
+    <radialGradient id="duna-glow" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#FFEBB3" stop-opacity="0.9" />
+      <stop offset="40%" stop-color="#FFA843" stop-opacity="0.6" />
+      <stop offset="75%" stop-color="#F26B1D" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#211E1A" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <circle cx="200" cy="230" r="190" fill="url(#duna-glow)" />
+  <ellipse cx="200" cy="420" rx="70" ry="14" fill="#000000" fill-opacity="0.4" filter="blur(8px)" />
+
+  <!-- Luminária Coluna Duna (Iluminada por dentro) -->
+  <g stroke="#FFD285" stroke-width="1.2">
+    <path d="M160 410 C140 320 230 250 170 170 C150 140 170 100 200 90 C230 100 250 140 230 170 C170 250 260 320 240 410 Z" fill="#FFE3A8" />
+    
+    <!-- Linhas translúcidas brilhantes -->
+    <path d="M180 410 C160 330 235 260 185 180 C170 150 185 110 200 90" stroke="#FFBA52" stroke-width="1" fill="none" />
+    <path d="M200 410 C180 340 240 270 200 190 C185 160 195 120 200 90" stroke="#FFBA52" stroke-width="1" fill="none" />
+    <path d="M220 410 C200 350 245 280 215 200 C200 170 205 130 200 90" stroke="#FFBA52" stroke-width="1" fill="none" />
+  </g>
+
+  <text x="200" y="465" text-anchor="middle" font-family="'Inter', sans-serif" font-size="11" font-weight="600" fill="#F7C933" letter-spacing="0.08em">LUMINÁRIA COLUNA DUNA · ILUMINADA</text>
+</svg>

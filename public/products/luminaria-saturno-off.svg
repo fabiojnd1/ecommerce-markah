@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" fill="none">
+  <!-- Fundo 4:5 neutro conforme design.md -->
+  <rect width="400" height="500" fill="#F1EEE9" />
+  
+  <!-- Base e sombra de contato -->
+  <ellipse cx="200" cy="420" rx="90" ry="16" fill="#000000" fill-opacity="0.08" filter="blur(6px)" />
+  
+  <!-- Corpo da Luminária Saturno (Apagada) -->
+  <g>
+    <!-- Base cônica de madeira / filamento Terracota -->
+    <path d="M160 410 L170 320 L230 320 L240 410 Z" fill="#D97A53" stroke="#B85E38" stroke-width="1.5" />
+    <ellipse cx="200" cy="410" rx="40" ry="6" fill="#C46B45" />
+    <!-- Camadas de impressão 3D (linhas sutis) -->
+    <line x1="165" y1="380" x2="235" y2="380" stroke="#B85E38" stroke-width="0.75" stroke-opacity="0.4" />
+    <line x1="168" y1="350" x2="232" y2="350" stroke="#B85E38" stroke-width="0.75" stroke-opacity="0.4" />
+
+    <!-- Cúpula Esférica Translúcida (Off-White / Marfim) -->
+    <circle cx="200" cy="240" r="85" fill="#FAF8F5" stroke="#E4DFD7" stroke-width="1.5" />
+    <!-- Anel orbital de Saturno (em PLA) -->
+    <ellipse cx="200" cy="240" rx="140" ry="24" fill="none" stroke="#D97A53" stroke-width="12" transform="rotate(-15 200 240)" />
+    <!-- Sombra e textura da cúpula -->
+    <path d="M140 180 C170 160 230 160 260 200 C270 240 250 290 220 310" stroke="#E4DFD7" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.6" />
+  </g>
+  
+  <!-- Tag de status visual discreta -->
+  <text x="200" y="470" text-anchor="middle" font-family="'Inter', sans-serif" font-size="11" font-weight="600" fill="#6B665F" letter-spacing="0.08em">LUMINÁRIA SATURNO · APAGADA</text>
+</svg>

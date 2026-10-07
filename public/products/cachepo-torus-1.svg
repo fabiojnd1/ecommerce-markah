@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" fill="none">
+  <rect width="400" height="500" fill="#F1EEE9" />
+  
+  <ellipse cx="200" cy="410" rx="90" ry="16" fill="#000000" fill-opacity="0.08" filter="blur(6px)" />
+
+  <!-- Cachepô Torus (Anéis Orgânicos em Verde Musgo) -->
+  <g>
+    <!-- Anel 4 (base) -->
+    <ellipse cx="200" cy="380" rx="90" ry="25" fill="#2E5A44" stroke="#1D3E2E" stroke-width="1.5" />
+    <path d="M110 380 C110 395 290 395 290 380 L290 395 C290 410 110 410 110 395 Z" fill="#244836" />
+    
+    <!-- Anel 3 -->
+    <ellipse cx="200" cy="335" rx="100" ry="26" fill="#3B7357" stroke="#2E5A44" stroke-width="1.5" />
+    <path d="M100 335 C100 350 300 350 300 335 L300 350 C300 365 100 365 100 350 Z" fill="#2E5A44" />
+
+    <!-- Anel 2 -->
+    <ellipse cx="200" cy="285" rx="105" ry="27" fill="#4B8C6B" stroke="#3B7357" stroke-width="1.5" />
+    <path d="M95 285 C95 300 305 300 305 285 L305 300 C305 315 95 315 95 300 Z" fill="#3B7357" />
+
+    <!-- Anel 1 (boca) -->
+    <ellipse cx="200" cy="235" rx="100" ry="26" fill="#5AA680" stroke="#4B8C6B" stroke-width="1.5" />
+    <path d="M100 235 C100 250 300 250 300 235 L300 250 C300 265 100 265 100 250 Z" fill="#4B8C6B" />
+
+    <!-- Abertura interna -->
+    <ellipse cx="200" cy="235" rx="75" ry="18" fill="#1D3E2E" />
+  </g>
+
+  <text x="200" y="465" text-anchor="middle" font-family="'Inter', sans-serif" font-size="11" font-weight="600" fill="#6B665F" letter-spacing="0.08em">CACHEPÔ TORUS · VERDE BOTÂNICO</text>
+</svg>

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" fill="none">
+  <rect width="400" height="500" fill="#1C1A18" />
+  
+  <defs>
+    <radialGradient id="origami-glow" cx="50%" cy="55%" r="50%">
+      <stop offset="0%" stop-color="#FFEBB3" stop-opacity="1" />
+      <stop offset="35%" stop-color="#FFC85C" stop-opacity="0.7" />
+      <stop offset="70%" stop-color="#F26B1D" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#1C1A18" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <circle cx="200" cy="300" r="180" fill="url(#origami-glow)" />
+
+  <!-- Cabo e soquete -->
+  <line x1="200" y1="0" x2="200" y2="180" stroke="#000000" stroke-width="4" />
+  <rect x="192" y="170" width="16" height="24" rx="2" fill="#D4AF37" />
+
+  <!-- Geometria facetada brilhante -->
+  <g stroke="#E8BA45" stroke-width="1.5" stroke-linejoin="round">
+    <polygon points="200,190 140,270 200,340" fill="#FFF2CF" />
+    <polygon points="200,190 260,270 200,340" fill="#FFE29E" />
+    <polygon points="200,190 260,270 310,240" fill="#FFECBE" />
+    <polygon points="200,190 140,270 90,240" fill="#FFE4A3" />
+    <polygon points="140,270 200,340 160,370" fill="#FFC966" />
+    <polygon points="260,270 200,340 240,370" fill="#FFB947" />
+    <polygon points="200,340 160,370 240,370" fill="#FFDB8B" />
+  </g>
+
+  <!-- Luz focal descendo -->
+  <polygon points="160,370 240,370 330,500 70,500" fill="#FFE499" fill-opacity="0.12" />
+  
+  <text x="200" y="475" text-anchor="middle" font-family="'Inter', sans-serif" font-size="11" font-weight="600" fill="#F7C933" letter-spacing="0.08em">PENDENTE ORIGAMI · ILUMINADO</text>
+</svg>

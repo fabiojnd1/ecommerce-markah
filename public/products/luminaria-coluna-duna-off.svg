@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" fill="none">
+  <rect width="400" height="500" fill="#F1EEE9" />
+  
+  <ellipse cx="200" cy="420" rx="70" ry="14" fill="#000000" fill-opacity="0.08" filter="blur(6px)" />
+
+  <!-- Luminária Coluna Duna (Linhas orgânicas em espiral) -->
+  <g stroke="#C4A882" stroke-width="1.2">
+    <!-- Base e coluna torcida helicoidal -->
+    <path d="M160 410 C140 320 230 250 170 170 C150 140 170 100 200 90 C230 100 250 140 230 170 C170 250 260 320 240 410 Z" fill="#E8DEC8" />
+    
+    <!-- Ranhuras verticais de impressão 3D (Textura Duna) -->
+    <path d="M180 410 C160 330 235 260 185 180 C170 150 185 110 200 90" stroke="#B3936B" stroke-width="1" fill="none" />
+    <path d="M200 410 C180 340 240 270 200 190 C185 160 195 120 200 90" stroke="#B3936B" stroke-width="1" fill="none" />
+    <path d="M220 410 C200 350 245 280 215 200 C200 170 205 130 200 90" stroke="#B3936B" stroke-width="1" fill="none" />
+  </g>
+
+  <text x="200" y="465" text-anchor="middle" font-family="'Inter', sans-serif" font-size="11" font-weight="600" fill="#6B665F" letter-spacing="0.08em">LUMINÁRIA COLUNA DUNA · AREIA</text>
+</svg>

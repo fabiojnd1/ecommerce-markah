@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Neutros da Markah */
+  --bg: #FAF8F5;
+  --surface: #FFFFFF;
+  --surface-alt: #F1EEE9;
+  --border: #E4DFD7;
+  --text: #1A1A1A;
+  --text-muted: #6B665F;
+  --ink: #111111;
+
+  /* Acentos da marca */
+  --magenta: #E0218A;
+  --laranja: #F26B1D;
+  --amarelo: #F7C933;
+  --verde: #2BAA5E;
+  --ciano: #1FA4D9;
+  --violeta: #7B3FB8;
+
+  /* Gradiente oficial Markah */
+  --brand-gradient: linear-gradient(120deg, #E0218A, #F26B1D, #F7C933, #2BAA5E, #1FA4D9, #7B3FB8);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sora), sans-serif;
+  }
+}
+
+/* Utilitários especiais para marca */
+.bg-brand-gradient {
+  background-image: var(--brand-gradient);
+}
+
+.text-brand-gradient {
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Foco visível acessível conforme design.md */
+:focus-visible {
+  outline: 2px solid var(--magenta);
+  outline-offset: 2px;
+}
+/* Trigger HMR */
+
+/* Animações respeitando prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
