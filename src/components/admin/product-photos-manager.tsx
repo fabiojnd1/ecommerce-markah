@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import {
   Upload,
@@ -39,9 +39,11 @@ export interface ProductPhotoItem {
   isRatioNonStandard?: boolean;
 }
 
-interface ProductPhotosManagerProps {
+export type PhotosUpdater = (prev: ProductPhotoItem[]) => ProductPhotoItem[];
+
+export interface ProductPhotosManagerProps {
   photos: ProductPhotoItem[];
-  onChange: (photos: ProductPhotoItem[]) => void;
+  onChange: (updater: ProductPhotoItem[] | PhotosUpdater) => void;
   onRemove: (id: string, url: string) => void;
 }
 
@@ -55,7 +57,13 @@ export function ProductPhotosManager({
   const [dragOverPhotoId, setDragOverPhotoId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Função interna de upload usando XMLHttpRequest para progresso real
+  // Mantém referência sempre sincronizada com o estado mais recente
+  const photosRef = useRef(photos);
+  useEffect(() => {
+    photosRef.current = photos;
+  }, [photos]);
+
+  // Função interna de upload usando XMLHttpRequest para progresso e feedback real
   const uploadPhotoFile = useCallback(
     (photoId: string, file: File) => {
       const xhr = new XMLHttpRequest();
@@ -65,8 +73,8 @@ export function ProductPhotosManager({
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
           const percent = Math.round((event.loaded / event.total) * 100);
-          onChange(
-            photos.map((item) =>
+          onChange((prev) =>
+            prev.map((item) =>
               item.id === photoId
                 ? { ...item, progress: Math.min(percent, 95) }
                 : item
@@ -79,8 +87,8 @@ export function ProductPhotosManager({
         try {
           const response = JSON.parse(xhr.responseText);
           if (xhr.status >= 200 && xhr.status < 300 && response.success) {
-            onChange(
-              photos.map((item) =>
+            onChange((prev) =>
+              prev.map((item) =>
                 item.id === photoId
                   ? {
                       ...item,
@@ -96,8 +104,8 @@ export function ProductPhotosManager({
           } else {
             const errorMsg =
               response.error || "Erro desconhecido ao processar upload.";
-            onChange(
-              photos.map((item) =>
+            onChange((prev) =>
+              prev.map((item) =>
                 item.id === photoId
                   ? {
                       ...item,
@@ -110,8 +118,8 @@ export function ProductPhotosManager({
             );
           }
         } catch {
-          onChange(
-            photos.map((item) =>
+          onChange((prev) =>
+            prev.map((item) =>
               item.id === photoId
                 ? {
                     ...item,
@@ -126,8 +134,8 @@ export function ProductPhotosManager({
       };
 
       xhr.onerror = () => {
-        onChange(
-          photos.map((item) =>
+        onChange((prev) =>
+          prev.map((item) =>
             item.id === photoId
               ? {
                   ...item,
@@ -140,13 +148,14 @@ export function ProductPhotosManager({
         );
       };
 
+      xhr.withCredentials = true;
       xhr.open("POST", "/api/admin/upload-blob");
       xhr.send(formData);
     },
-    [photos, onChange]
+    [onChange]
   );
 
-  // Processa novos arquivos adicionados
+  // Processa novos arquivos adicionados (um ou múltiplos arquivos simultaneamente)
   const handleFiles = useCallback(
     (fileList: FileList | File[]) => {
       const files = Array.from(fileList);
@@ -161,10 +170,6 @@ export function ProductPhotosManager({
 
         const tempId = `photo_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 6)}`;
         const localPreviewUrl = URL.createObjectURL(file);
-        const hasExistingPrimary =
-          photos.some((p) => p.isPrimary) ||
-          newPhotos.some((p) => p.isPrimary);
-        const shouldBePrimary = !hasExistingPrimary && index === 0;
 
         if (!isExtValid) {
           newPhotos.push({
@@ -173,12 +178,12 @@ export function ProductPhotosManager({
             file,
             name: file.name,
             alt: "",
-            displayOrder: photos.length + newPhotos.length,
-            isPrimary: shouldBePrimary,
+            displayOrder: photosRef.current.length + newPhotos.length,
+            isPrimary: false,
             isHover: false,
             status: "error",
             progress: 0,
-            errorMessage: `Formato "${ext}" não suportado. Aceita PNG, JPG ou JPEG.`,
+            errorMessage: `Formato "${ext}" não suportado. Aceita PNG, JPG, JPEG ou WEBP.`,
           });
           return;
         }
@@ -191,8 +196,8 @@ export function ProductPhotosManager({
             file,
             name: file.name,
             alt: "",
-            displayOrder: photos.length + newPhotos.length,
-            isPrimary: shouldBePrimary,
+            displayOrder: photosRef.current.length + newPhotos.length,
+            isPrimary: false,
             isHover: false,
             status: "error",
             progress: 0,
@@ -207,8 +212,8 @@ export function ProductPhotosManager({
           file,
           name: file.name,
           alt: "",
-          displayOrder: photos.length + newPhotos.length,
-          isPrimary: shouldBePrimary,
+          displayOrder: photosRef.current.length + newPhotos.length,
+          isPrimary: false,
           isHover: false,
           status: "uploading",
           progress: 5,
@@ -223,9 +228,13 @@ export function ProductPhotosManager({
           const isNonStandard =
             Math.abs(ratio - RECOMMENDED_ASPECT_RATIO) > ASPECT_RATIO_TOLERANCE;
 
-          photoItem.width = w;
-          photoItem.height = h;
-          photoItem.isRatioNonStandard = isNonStandard;
+          onChange((prev) =>
+            prev.map((item) =>
+              item.id === tempId
+                ? { ...item, width: w, height: h, isRatioNonStandard: isNonStandard }
+                : item
+            )
+          );
         };
         img.src = localPreviewUrl;
 
@@ -233,75 +242,88 @@ export function ProductPhotosManager({
         filesToUpload.push({ id: tempId, file });
       });
 
-      const updatedList = [...photos, ...newPhotos];
-      onChange(updatedList);
+      // Atualiza a lista com garantia de atomicidade (sem closure desatualizada)
+      onChange((prev) => {
+        const hasExistingPrimary =
+          prev.some((p) => p.isPrimary) || newPhotos.some((p) => p.isPrimary);
+        if (!hasExistingPrimary && newPhotos.length > 0) {
+          const validIndex = newPhotos.findIndex((p) => p.status !== "error");
+          if (validIndex >= 0) {
+            newPhotos[validIndex].isPrimary = true;
+          } else {
+            newPhotos[0].isPrimary = true;
+          }
+        }
+        return [...prev, ...newPhotos];
+      });
 
       // Inicia upload dos arquivos válidos
       filesToUpload.forEach(({ id, file }) => {
         uploadPhotoFile(id, file);
       });
     },
-    [photos, onChange, uploadPhotoFile]
+    [onChange, uploadPhotoFile]
   );
 
   // Ações de ordenação
   function movePhoto(index: number, direction: "left" | "right") {
-    const targetIndex = direction === "left" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= photos.length) return;
+    onChange((prev) => {
+      const targetIndex = direction === "left" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= prev.length) return prev;
 
-    const newList = [...photos];
-    const [moved] = newList.splice(index, 1);
-    newList.splice(targetIndex, 0, moved);
+      const newList = [...prev];
+      const [moved] = newList.splice(index, 1);
+      newList.splice(targetIndex, 0, moved);
 
-    const reordered = newList.map((item, idx) => ({
-      ...item,
-      displayOrder: idx,
-    }));
-    onChange(reordered);
+      return newList.map((item, idx) => ({
+        ...item,
+        displayOrder: idx,
+      }));
+    });
   }
 
   // Definir foto principal (exatamente uma)
   function setPrimaryPhoto(id: string) {
-    const updated = photos.map((item) => {
-      if (item.id === id) {
-        return { ...item, isPrimary: true, isHover: false };
-      }
-      return { ...item, isPrimary: false };
-    });
-    onChange(updated);
+    onChange((prev) =>
+      prev.map((item) => {
+        if (item.id === id) {
+          return { ...item, isPrimary: true, isHover: false };
+        }
+        return { ...item, isPrimary: false };
+      })
+    );
   }
 
   // Alternar foto de hover / iluminada (no máximo uma)
   function toggleHoverPhoto(id: string) {
-    const updated = photos.map((item) => {
-      if (item.id === id) {
-        // Se já era hover, desmarca. Se não era, marca como hover (e remove primary se tiver)
-        const nextHover = !item.isHover;
-        return {
-          ...item,
-          isHover: nextHover,
-          isPrimary: nextHover ? false : item.isPrimary,
-        };
-      }
-      return { ...item, isHover: false };
-    });
-    onChange(updated);
+    onChange((prev) =>
+      prev.map((item) => {
+        if (item.id === id) {
+          const nextHover = !item.isHover;
+          return {
+            ...item,
+            isHover: nextHover,
+            isPrimary: nextHover ? false : item.isPrimary,
+          };
+        }
+        return { ...item, isHover: false };
+      })
+    );
   }
 
   // Atualizar texto alternativo
   function updateAltText(id: string, altText: string) {
-    const updated = photos.map((item) =>
-      item.id === id ? { ...item, alt: altText } : item
+    onChange((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, alt: altText } : item))
     );
-    onChange(updated);
   }
 
   // Re-tentar upload em caso de falha
   function retryUpload(photo: ProductPhotoItem) {
     if (!photo.file) return;
 
-    onChange(
-      photos.map((item) =>
+    onChange((prev) =>
+      prev.map((item) =>
         item.id === photo.id
           ? { ...item, status: "uploading", progress: 5, errorMessage: undefined }
           : item
@@ -318,20 +340,22 @@ export function ProductPhotosManager({
       return;
     }
 
-    const sourceIndex = photos.findIndex((p) => p.id === draggedPhotoId);
-    const targetIndex = photos.findIndex((p) => p.id === targetPhotoId);
+    onChange((prev) => {
+      const sourceIndex = prev.findIndex((p) => p.id === draggedPhotoId);
+      const targetIndex = prev.findIndex((p) => p.id === targetPhotoId);
 
-    if (sourceIndex >= 0 && targetIndex >= 0) {
-      const newList = [...photos];
-      const [moved] = newList.splice(sourceIndex, 1);
-      newList.splice(targetIndex, 0, moved);
+      if (sourceIndex >= 0 && targetIndex >= 0) {
+        const newList = [...prev];
+        const [moved] = newList.splice(sourceIndex, 1);
+        newList.splice(targetIndex, 0, moved);
 
-      const reordered = newList.map((item, idx) => ({
-        ...item,
-        displayOrder: idx,
-      }));
-      onChange(reordered);
-    }
+        return newList.map((item, idx) => ({
+          ...item,
+          displayOrder: idx,
+        }));
+      }
+      return prev;
+    });
 
     setDraggedPhotoId(null);
     setDragOverPhotoId(null);
@@ -363,7 +387,7 @@ export function ProductPhotosManager({
               ref={fileInputRef}
               type="file"
               multiple
-              accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+              accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
               onChange={(e) => {
                 if (e.target.files) handleFiles(e.target.files);
                 e.target.value = "";
@@ -390,7 +414,7 @@ export function ProductPhotosManager({
             Padrão visual da loja Markah: proporção 4:5 (ex: {RECOMMENDED_WIDTH_PX} × {RECOMMENDED_HEIGHT_PX} px ou superior)
           </p>
           <p className="text-text-muted text-[11px] leading-relaxed">
-            Formatos aceitos: <strong>PNG, JPG e JPEG</strong> (até {MAX_IMAGE_FILE_SIZE_BYTES / (1024 * 1024)} MB).
+            Formatos aceitos: <strong>PNG, JPG, JPEG e WEBP</strong> (até {MAX_IMAGE_FILE_SIZE_BYTES / (1024 * 1024)} MB).
             Fotos enviadas em proporções diferentes são exibidas na moldura 4:5 com corte centralizado na loja — confira a prévia abaixo.
           </p>
         </div>
@@ -423,7 +447,7 @@ export function ProductPhotosManager({
             Arraste fotos para esta área ou escolha do computador
           </p>
           <p className="text-[11px] text-text-muted">
-            Selecione múltiplos arquivos PNG, JPG ou JPEG de uma só vez
+            Selecione múltiplos arquivos PNG, JPG, JPEG ou WEBP de uma só vez
           </p>
         </div>
 
@@ -431,7 +455,7 @@ export function ProductPhotosManager({
           <input
             type="file"
             multiple
-            accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+            accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
             onChange={(e) => {
               if (e.target.files) handleFiles(e.target.files);
               e.target.value = "";
@@ -502,7 +526,7 @@ export function ProductPhotosManager({
                       src={photo.url}
                       alt={photo.alt || photo.name || "Foto do produto"}
                       fill
-                      unoptimized={photo.url.startsWith("blob:") || photo.url.endsWith(".svg")}
+                      unoptimized={photo.url.startsWith("blob:") || photo.url.startsWith("/api/images/") || photo.url.endsWith(".svg")}
                       sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
                       className={`object-cover transition-transform duration-300 group-hover:scale-102 ${
                         isUploading ? "opacity-40 blur-[1px]" : ""

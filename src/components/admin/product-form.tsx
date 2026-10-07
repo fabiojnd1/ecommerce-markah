@@ -462,16 +462,25 @@ export function ProductForm({ initialProduct, categories }: ProductFormProps) {
         packageDepthCm: Number(packageDepthCm),
         colorName,
         colorHex,
-        images: photos.map((p, idx) => ({
-          id: p.id,
-          url: p.url,
-          alt: p.alt.trim(),
-          displayOrder: idx,
-          isPrimary: p.isPrimary,
-          isHover: p.isHover,
-        })),
+        // Garante fotos válidas e exatamente uma foto principal
+        images: (() => {
+          const validPhotos = photos.filter(
+            (p) => p.status === "success" || (!p.status && p.url)
+          );
+          const hasPrimary = validPhotos.some((p) => p.isPrimary);
+          return validPhotos.map((p, idx) => ({
+            id: p.id,
+            url: p.url,
+            alt: p.alt.trim(),
+            displayOrder: idx,
+            isPrimary: hasPrimary ? p.isPrimary : idx === 0,
+            isHover: p.isHover,
+          }));
+        })(),
         deletedImageUrls: deletedBlobUrls,
-        imageUrl: photos.find((p) => p.isPrimary)?.url || photos[0]?.url,
+        imageUrl:
+          photos.find((p) => p.isPrimary)?.url ||
+          photos.find((p) => p.status === "success" || (!p.status && p.url))?.url,
         hoverImageUrl: photos.find((p) => p.isHover)?.url,
         options: optionsToSave,
         variants: variantsToSave,

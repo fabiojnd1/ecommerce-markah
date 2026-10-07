@@ -9,8 +9,8 @@ import {
 
 export interface ImageInspectionResult {
   valid: boolean;
-  mimeType?: "image/png" | "image/jpeg";
-  extension?: "png" | "jpg";
+  mimeType?: "image/png" | "image/jpeg" | "image/webp";
+  extension?: "png" | "jpg" | "webp";
   width?: number;
   height?: number;
   error?: string;
@@ -165,9 +165,28 @@ export function inspectImageBuffer(
     };
   }
 
+  // 3. Verificação de WEBP: RIFF .... WEBP
+  if (
+    buffer.length >= 12 &&
+    buffer[0] === 0x52 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x46 &&
+    buffer[8] === 0x57 &&
+    buffer[9] === 0x45 &&
+    buffer[10] === 0x42 &&
+    buffer[11] === 0x50
+  ) {
+    return {
+      valid: true,
+      mimeType: "image/webp",
+      extension: "webp",
+    };
+  }
+
   return {
     valid: false,
-    error: "Assinatura de imagem inválida. O arquivo enviado não é um JPEG ou PNG autêntico.",
+    error: "Assinatura de imagem inválida. O arquivo enviado não é um JPEG, PNG ou WEBP autêntico.",
   };
 }
 
@@ -177,8 +196,8 @@ export function inspectImageBuffer(
  */
 export async function uploadCatalogImageToBlob(
   buffer: Buffer,
-  extension: "png" | "jpg",
-  mimeType: "image/png" | "image/jpeg"
+  extension: "png" | "jpg" | "webp",
+  mimeType: "image/png" | "image/jpeg" | "image/webp"
 ) {
   if (!isBlobConfigured()) {
     throw new Error(
