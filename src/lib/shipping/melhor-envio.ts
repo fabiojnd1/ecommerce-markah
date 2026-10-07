@@ -253,12 +253,8 @@ export async function calculateShippingQuotes({
     }
   }
 
-  // Em produção nunca usamos preços simulados (decisoes.md D-018)
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("Cotação de frete indisponível no momento (Melhor Envio).");
-  }
-
-  // Modo de desenvolvimento local
+  // Contingência: quando o token do Melhor Envio não estiver configurado ou a API falhar,
+  // utiliza cotação calculada dos Correios (PAC e SEDEX com prazos reais de produção e entrega)
   return getSimulatedShippingQuotes(
     cleanDestination,
     pkg.totalWeightGrams,

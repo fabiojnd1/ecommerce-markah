@@ -56,8 +56,11 @@ export function CheckoutForm() {
   const [isLoadingCep, setIsLoadingCep] = useState(false);
 
   // 3. Frete
-  const [shippingQuotes, setShippingQuotes] = useState<ShippingOption[]>([]);
+  const [shippingQuotes, setShippingQuotes] = useState<ShippingOption[]>(() =>
+    selectedShipping ? [selectedShipping] : []
+  );
   const [isPendingShipping, startShippingTransition] = useTransition();
+  const [shippingError, setShippingError] = useState<string | null>(null);
 
   // 4. Pagamento
   const [paymentMethod, setPaymentMethod] = useState<"PIX" | "CREDIT_CARD">("PIX");
@@ -97,6 +100,7 @@ export function CheckoutForm() {
   async function handleCepLookup(cleanCep: string) {
     if (cleanCep.length !== 8) return;
     setIsLoadingCep(true);
+    setShippingError(null);
     try {
       const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
       if (res.ok) {
@@ -127,7 +131,7 @@ export function CheckoutForm() {
         }));
 
         const res = await getShippingQuotesAction(cleanCep, shippingItems);
-        if (res.success && res.quotes) {
+        if (res.success && res.quotes && res.quotes.length > 0) {
           const mapped: ShippingOption[] = res.quotes.map((q) => ({
             id: q.id,
             name: q.name,
@@ -140,9 +144,9 @@ export function CheckoutForm() {
             isFree: q.isFree,
           }));
           setShippingQuotes(mapped);
-          if (!selectedShipping || !mapped.some((m) => m.id === selectedShipping.id)) {
-            setSelectedShipping(mapped[0] || null);
-          }
+          setSelectedShipping(mapped[0]);
+        } else {
+          setShippingError(res.error || "Não foi possível calcular o frete para este CEP.");
         }
       });
     }
@@ -412,29 +416,55 @@ export function CheckoutForm() {
                 <label className="block text-text-muted font-medium mb-1">
                   CEP *
                 </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    required
-                    value={postalCode}
-                    onChange={(e) => {
-                      const formatted = maskCep(e.target.value);
-                      setPostalCode(formatted);
-                      const clean = formatted.replace(/\D/g, "");
+                <div className="relative flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      required
+                      value={postalCode}
+                      onChange={(e) => {
+                        const formatted = maskCep(e.target.value);
+                        setPostalCode(formatted);
+                        const clean = formatted.replace(/\D/g, "");
+                        if (clean.length === 8) {
+                          handleCepLookup(clean);
+                        }
+                      }}
+                      onBlur={() => {
+                        const clean = postalCode.replace(/\D/g, "");
+                        if (clean.length === 8 && shippingQuotes.length === 0) {
+                          handleCepLookup(clean);
+                        }
+                      }}
+                      placeholder="00000-000"
+                      maxLength={9}
+                      inputMode="numeric"
+                      autoComplete="postal-code"
+                      className="w-full min-h-11 px-3 rounded-input border border-border text-base md:text-sm focus:outline-none focus:border-ink font-mono"
+                    />
+                    {isLoadingCep && (
+                      <Loader2 className="w-4 h-4 text-text-muted animate-spin absolute right-3 top-3" />
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const clean = postalCode.replace(/\D/g, "");
                       if (clean.length === 8) {
                         handleCepLookup(clean);
+                      } else {
+                        setShippingError("Digite um CEP válido com 8 dígitos.");
                       }
                     }}
-                    placeholder="00000-000"
-                    maxLength={9}
-                    inputMode="numeric"
-                    autoComplete="postal-code"
-                    className="w-full min-h-11 px-3 rounded-input border border-border text-base md:text-sm focus:outline-none focus:border-ink font-mono"
-                  />
-                  {isLoadingCep && (
-                    <Loader2 className="w-4 h-4 text-text-muted animate-spin absolute right-3 top-3" />
-                  )}
+                    disabled={isPendingShipping || isLoadingCep}
+                    className="min-h-11 px-3 bg-surface-alt hover:bg-border/40 border border-border rounded-input text-xs font-semibold text-ink shrink-0 transition-colors cursor-pointer"
+                  >
+                    Calcular
+                  </button>
                 </div>
+                {shippingError && (
+                  <p className="text-[11px] text-red-600 mt-1">{shippingError}</p>
+                )}
               </div>
 
               <div className="sm:col-span-4">
