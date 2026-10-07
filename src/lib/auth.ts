@@ -26,7 +26,8 @@ const DEV_ADMIN_PASS = "markah2026";
 
 function getAdminCredentials(): { email: string; password: string } | null {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-  const password = process.env.ADMIN_PASSWORD;
+  const rawPassword = process.env.ADMIN_PASSWORD;
+  const password = rawPassword ? rawPassword.trim() : undefined;
   if (email && password) {
     return { email, password };
   }
@@ -131,7 +132,11 @@ export async function authenticateAdmin(
   }
 
   const emailOk = safeEqual(email, credentials.email);
-  const passwordOk = safeEqual(password, credentials.password);
+  const rawInputPassword = (formData.get("password") as string) || "";
+  const trimmedInputPassword = rawInputPassword.trim();
+  const passwordOk =
+    safeEqual(trimmedInputPassword, credentials.password) ||
+    safeEqual(rawInputPassword, process.env.ADMIN_PASSWORD || "");
   if (!emailOk || !passwordOk) {
     // Registra tentativa falha e calcula bloqueio se exceder limite
     const currentAttempts =
