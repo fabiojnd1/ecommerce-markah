@@ -19,11 +19,6 @@ export interface SessionUser {
   role: "ADMIN" | "CUSTOMER";
 }
 
-// Credenciais usadas SOMENTE em desenvolvimento local, quando ADMIN_EMAIL /
-// ADMIN_PASSWORD não estão definidas. Em produção são recusadas (mistakes.md M-002).
-const DEV_ADMIN_EMAIL = "admin@markah.com.br";
-const DEV_ADMIN_PASS = "markah2026";
-
 function getAdminCredentials(): { email: string; password: string } | null {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const rawPassword = process.env.ADMIN_PASSWORD;
@@ -31,10 +26,7 @@ function getAdminCredentials(): { email: string; password: string } | null {
   if (email && password) {
     return { email, password };
   }
-  if (process.env.NODE_ENV === "production") {
-    return null;
-  }
-  return { email: DEV_ADMIN_EMAIL, password: DEV_ADMIN_PASS };
+  return null;
 }
 
 // ==========================================
@@ -104,17 +96,52 @@ export async function authenticateAdmin(
   formData: FormData
 ): Promise<{ success: boolean; error?: string }> {
   const email = (formData.get("email") as string)?.trim().toLowerCase();
-  const password = (formData.get("password") as string) || "";
+  const rawInputPassword = (formData.get("password") as string) || "";
+  const trimmedInputPassword = rawInputPassword.trim();
 
-  if (!email || !password) {
+  if (!email || !rawInputPassword) {
     return { success: false, error: "Informe e-mail e senha." };
   }
 
-  // Verificação de bloqueio por tentativas excessivas (Anti Brute Force)
+  const credentials = getAdminCredentials();
+  if (!credentials) {
+    return {
+      success: false,
+      error: "Login administrativo não configurado (defina ADMIN_EMAIL e ADMIN_PASSWORD nas variáveis).",
+    };
+  }
+
   const attemptKey = email;
   const now = Date.now();
   const record = loginAttempts.get(attemptKey);
 
+  const emailOk = safeEqual(email, credentials.email);
+  const passwordOk =
+    safeEqual(trimmedInputPassword, credentials.password) ||
+    safeEqual(rawInputPassword, (process.env.ADMIN_PASSWORD || "").trim());
+
+  // Se o e-mail e a senha estiverem corretos: libera o acesso imediatamente e cancela qualquer bloqueio prévio!
+  if (emailOk && passwordOk) {
+    loginAttempts.delete(attemptKey);
+
+    const token = await signToken(
+      { sub: "admin", role: "ADMIN", email, name: "Administrador Markah", purpose: "session" },
+      ADMIN_SESSION_TTL
+    );
+
+    const cookieStore = await cookies();
+    cookieStore.set(ADMIN_SESSION_COOKIE, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: ADMIN_SESSION_TTL,
+      path: "/",
+    });
+
+    return { success: true };
+  }
+
+  // Se as credenciais estiverem incorretas: verifica se excedeu o limite e bloqueia
   if (record?.lockedUntil && record.lockedUntil > now) {
     const remainingMinutes = Math.ceil((record.lockedUntil - now) / 60000);
     return {
@@ -123,71 +150,36 @@ export async function authenticateAdmin(
     };
   }
 
-  const credentials = getAdminCredentials();
-  if (!credentials) {
-    return {
-      success: false,
-      error: "Login administrativo não configurado (defina ADMIN_EMAIL e ADMIN_PASSWORD).",
-    };
-  }
+  // Registra tentativa falha e calcula bloqueio se exceder limite
+  const currentAttempts =
+    record && now - record.lastAttempt < ATTEMPT_WINDOW_MS
+      ? record.attempts + 1
+      : 1;
 
-  const emailOk = safeEqual(email, credentials.email);
-  const rawInputPassword = (formData.get("password") as string) || "";
-  const trimmedInputPassword = rawInputPassword.trim();
-  const passwordOk =
-    safeEqual(trimmedInputPassword, credentials.password) ||
-    safeEqual(rawInputPassword, process.env.ADMIN_PASSWORD || "");
-  if (!emailOk || !passwordOk) {
-    // Registra tentativa falha e calcula bloqueio se exceder limite
-    const currentAttempts =
-      record && now - record.lastAttempt < ATTEMPT_WINDOW_MS
-        ? record.attempts + 1
-        : 1;
+  const lockedUntil =
+    currentAttempts >= MAX_FAILED_ATTEMPTS ? now + LOCKOUT_DURATION_MS : undefined;
 
-    const lockedUntil =
-      currentAttempts >= MAX_FAILED_ATTEMPTS ? now + LOCKOUT_DURATION_MS : undefined;
-
-    loginAttempts.set(attemptKey, {
-      attempts: currentAttempts,
-      lastAttempt: now,
-      lockedUntil,
-    });
-
-    // Atraso de 500ms em caso de erro para frear ataques automatizados de dicionário
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    if (lockedUntil) {
-      return {
-        success: false,
-        error: "Limite de tentativas excedido. O login foi bloqueado temporariamente por 15 minutos.",
-      };
-    }
-
-    const remaining = MAX_FAILED_ATTEMPTS - currentAttempts;
-    return {
-      success: false,
-      error: `Credenciais administrativas inválidas. Restam ${remaining} tentativa(s) antes do bloqueio.`,
-    };
-  }
-
-  // Sucesso: limpa histórico de tentativas daquele e-mail
-  loginAttempts.delete(attemptKey);
-
-  const token = await signToken(
-    { sub: "admin", role: "ADMIN", email, name: "Administrador Markah", purpose: "session" },
-    ADMIN_SESSION_TTL
-  );
-
-  const cookieStore = await cookies();
-  cookieStore.set(ADMIN_SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: ADMIN_SESSION_TTL,
+  loginAttempts.set(attemptKey, {
+    attempts: currentAttempts,
+    lastAttempt: now,
+    lockedUntil,
   });
 
-  return { success: true };
+  // Atraso de 500ms em caso de erro para frear ataques automatizados de dicionário
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  if (lockedUntil) {
+    return {
+      success: false,
+      error: "Limite de tentativas excedido. O login foi bloqueado temporariamente por 15 minutos.",
+    };
+  }
+
+  const remaining = MAX_FAILED_ATTEMPTS - currentAttempts;
+  return {
+    success: false,
+    error: `Credenciais administrativas inválidas. Restam ${remaining} tentativa(s) antes do bloqueio.`,
+  };
 }
 
 export async function logoutAdmin(): Promise<void> {

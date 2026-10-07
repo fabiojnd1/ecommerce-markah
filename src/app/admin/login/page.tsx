@@ -119,15 +119,12 @@ export default function AdminLoginPage() {
           </div>
         </form>
 
-        {/* Dica de Desenvolvimento */}
+        {/* Selo de Segurança */}
         <div className="mt-6 pt-6 border-t border-border/60 text-center text-xs text-text-muted">
-          <div className="inline-flex items-center gap-1.5 text-verde font-medium mb-1">
+          <div className="inline-flex items-center gap-1.5 text-verde font-medium">
             <ShieldCheck className="w-4 h-4" />
-            <span>Ambiente seguro de autenticação (P-007)</span>
+            <span>Ambiente seguro e protegido contra ataques externos (P-007)</span>
           </div>
-          <p className="text-[11px] text-text-muted">
-            Credenciais padrão: <code className="text-text font-mono">admin@markah.com.br</code> / <code className="text-text font-mono">markah2026</code>
-          </p>
         </div>
       </div>
     </div>
