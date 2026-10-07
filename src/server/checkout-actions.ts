@@ -10,7 +10,7 @@ import {
 } from "@/lib/orders-repository";
 import { calculateCartTotals, type AppliedCoupon } from "@/lib/pricing";
 import { calculateShippingQuotes } from "@/lib/shipping/melhor-envio";
-import { createPixPayment, createCardPayment } from "@/lib/payments/mercadopago";
+import { createPixPayment, createCardPayment, getPaymentDetails } from "@/lib/payments/mercadopago";
 import { sendOrderCreatedEmail, sendPaymentConfirmedEmail } from "@/lib/email/resend";
 import { SEED_PRODUCTS } from "@/lib/data/catalog-seed";
 import { formatVariantDisplayName, getVariantColors } from "@/lib/catalog";
@@ -428,22 +428,41 @@ export async function getOrderStatusAction(orderId: string) {
     if (!order) {
       return { success: false, error: "Pedido não encontrado." };
     }
+    let currentOrder = order;
+    if (currentOrder.status === "AGUARDANDO_PAGAMENTO" && currentOrder.paymentId) {
+      try {
+        const mpPayment = await getPaymentDetails(currentOrder.paymentId);
+        if (mpPayment && mpPayment.status === "approved") {
+          const updated = await updateOrderStatus(currentOrder.id, "PAGO", "APPROVED", mpPayment.id);
+          if (updated) {
+            currentOrder = updated;
+            try {
+              await sendPaymentConfirmedEmail(updated);
+            } catch {
+              // ignore email err
+            }
+          }
+        }
+      } catch {
+        // ignore direct check err
+      }
+    }
 
     return {
       success: true,
       order: {
-        id: order.id,
-        orderNumber: order.orderNumber,
-        status: order.status,
-        paymentStatus: order.paymentStatus,
-        paymentMethod: order.paymentMethod,
-        finalAmountCents: order.finalAmountCents,
-        shippingCarrier: order.shippingCarrier,
-        totalDeliveryDays: order.totalDeliveryDays,
-        productionDays: order.productionDays,
-        pixExpiresAt: order.pixExpiresAt?.toISOString() || null,
-        pixQrCode: order.pixQrCode,
-        pixQrCodeUrl: order.pixQrCodeUrl,
+        id: currentOrder.id,
+        orderNumber: currentOrder.orderNumber,
+        status: currentOrder.status,
+        paymentStatus: currentOrder.paymentStatus,
+        paymentMethod: currentOrder.paymentMethod,
+        finalAmountCents: currentOrder.finalAmountCents,
+        shippingCarrier: currentOrder.shippingCarrier,
+        totalDeliveryDays: currentOrder.totalDeliveryDays,
+        productionDays: currentOrder.productionDays,
+        pixExpiresAt: currentOrder.pixExpiresAt?.toISOString() || null,
+        pixQrCode: currentOrder.pixQrCode,
+        pixQrCodeUrl: currentOrder.pixQrCodeUrl,
       },
     };
   } catch {
