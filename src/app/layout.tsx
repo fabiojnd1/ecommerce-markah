@@ -1,4 +1,4 @@
-import { WHATSAPP_NUMBER } from "@/lib/site-config";
+import { WHATSAPP_NUMBER, getSiteUrl, getSiteMetadataBase } from "@/lib/site-config";
 import type { Metadata } from "next";
 import { Inter, Sora } from "next/font/google";
 import { JsonLd } from "@/components/loja/json-ld";
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Markah Brasil", url: "https://markah.com.br" }],
   creator: "Markah Brasil",
   publisher: "Markah Brasil",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://markah.com.br"),
+  metadataBase: getSiteMetadataBase(),
   alternates: {
     canonical: "/",
   },
@@ -92,7 +92,7 @@ export const metadata: Metadata = {
   },
 };
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://markah.com.br";
+const baseUrl = getSiteUrl();
 
 const organizationSchema = {
   "@context": "https://schema.org",

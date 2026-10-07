@@ -3,6 +3,7 @@
 import { getOrderByNumber, listOrdersByCustomerEmail, type OrderRecord } from "@/lib/orders-repository";
 import { getCustomerUser, createCustomerMagicLinkToken, logoutCustomer } from "@/lib/auth";
 import { sendCustomerMagicLinkEmail } from "@/lib/email/resend";
+import { getSiteUrl } from "@/lib/site-config";
 
 export interface PublicTrackingResult {
   orderNumber: string;
@@ -138,7 +139,7 @@ export async function customerLoginAction(
   }
 
   const token = await createCustomerMagicLinkToken(cleanEmail);
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+  const siteUrl = getSiteUrl();
   const link = `${siteUrl}/conta/entrar?token=${encodeURIComponent(token)}`;
 
   const sent = await sendCustomerMagicLinkEmail(cleanEmail, link);

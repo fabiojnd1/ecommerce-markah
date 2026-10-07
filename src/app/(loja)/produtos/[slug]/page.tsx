@@ -8,6 +8,7 @@ import { ProductDetailsClient } from "@/components/loja/product-details-client";
 import { ProductReviewsSection } from "@/components/loja/product-reviews-section";
 import { ProductGrid } from "@/components/loja/product-grid";
 import { JsonLd } from "@/components/loja/json-ld";
+import { getSiteUrl } from "@/lib/site-config";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -62,7 +63,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   const primaryVariant = product.variants[0];
   const priceReais = (primaryVariant.priceCents / 100).toFixed(2);
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://markah.com.br";
+  const baseUrl = getSiteUrl();
 
   const productSchema: Record<string, unknown> = {
     "@context": "https://schema.org",

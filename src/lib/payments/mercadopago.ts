@@ -14,6 +14,7 @@
  */
 
 import { isProduction } from "@/lib/runtime";
+import { getSiteUrl } from "@/lib/site-config";
 
 export interface CreatePixPaymentParams {
   orderNumber: string;
@@ -121,10 +122,10 @@ async function readMpError(response: Response): Promise<string> {
 }
 
 function notificationUrl(): string | undefined {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const siteUrl = getSiteUrl();
   // O MP rejeita notification_url com localhost; em dev local o webhook não é chamado.
-  if (!siteUrl || siteUrl.includes("localhost")) return undefined;
-  return `${siteUrl.replace(/\/$/, "")}/api/webhooks/mercadopago`;
+  if (siteUrl.includes("localhost") || siteUrl.includes("127.0.0.1")) return undefined;
+  return `${siteUrl}/api/webhooks/mercadopago`;
 }
 
 /**

@@ -1,10 +1,11 @@
 import type { MetadataRoute } from "next";
 import { getCategories, getProducts } from "@/lib/catalog";
+import { getSiteUrl } from "@/lib/site-config";
 
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://markah.com.br";
+  const baseUrl = getSiteUrl();
   const now = new Date();
 
   // 1. Páginas estáticas principais e institucionais
