@@ -79,7 +79,7 @@ export default function AdminLoginPage() {
                 name="email"
                 type="email"
                 required
-                defaultValue="admin@markah.com.br"
+                placeholder="admin@markah.com.br"
                 className="w-full h-11 pl-10 pr-4 rounded-input border border-border bg-surface text-sm focus:outline-none focus:border-ink transition-colors"
               />
             </div>
@@ -99,7 +99,8 @@ export default function AdminLoginPage() {
                 name="password"
                 type="password"
                 required
-                defaultValue="markah2026"
+                placeholder="Digite sua senha de acesso"
+                autoComplete="current-password"
                 className="w-full h-11 pl-10 pr-4 rounded-input border border-border bg-surface text-sm focus:outline-none focus:border-ink transition-colors"
               />
             </div>
