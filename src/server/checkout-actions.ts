@@ -16,6 +16,7 @@ import { SEED_PRODUCTS } from "@/lib/data/catalog-seed";
 import { formatVariantDisplayName, getVariantColors } from "@/lib/catalog";
 import { validateCouponAction } from "./cart-actions";
 import { incrementCouponUsage } from "@/lib/promotions-repository";
+import { db } from "@/lib/db";
 
 export interface CheckoutCustomerInput {
   name: string;
@@ -142,6 +143,53 @@ export async function createOrderAction(
           foundProduct = p;
           foundVariant = v;
           break;
+        }
+      }
+
+      // Se não encontrou no catálogo estático, busca no banco de dados (Prisma)
+      if (!foundProduct || !foundVariant) {
+        try {
+          const dbVariant = await db.productVariant.findUnique({
+            where: { id: clientItem.variantId },
+            include: { product: { include: { images: true } } },
+          });
+          if (dbVariant && dbVariant.product) {
+            foundProduct = {
+              id: dbVariant.product.id,
+              name: dbVariant.product.name,
+              slug: dbVariant.product.slug,
+              description: dbVariant.product.description || "",
+              categorySlug: "decoracao",
+              collectionSlugs: [],
+              material: "PLA" as const,
+              isSustainable: true,
+              productionDays: dbVariant.product.productionDays || 3,
+              dimensions: dbVariant.product.dimensions || "",
+              weightGrams: dbVariant.weightGrams,
+              images: dbVariant.product.images.map((img) => ({
+                id: img.id,
+                url: img.url,
+                alt: img.alt,
+                isPrimary: img.isPrimary,
+                isHover: img.isHover,
+              })),
+              options: [],
+              variants: [],
+            };
+            foundVariant = {
+              id: dbVariant.id,
+              sku: dbVariant.sku,
+              priceCents: dbVariant.priceCents,
+              weightGrams: dbVariant.weightGrams,
+              packageHeightCm: dbVariant.packageHeightCm,
+              packageWidthCm: dbVariant.packageWidthCm,
+              packageDepthCm: dbVariant.packageDepthCm,
+              active: dbVariant.active,
+              selectedOptionValueIds: [],
+            };
+          }
+        } catch {
+          // ignore
         }
       }
 
