@@ -284,7 +284,7 @@ export async function createOrderAction(
       if (!pixRes.success) {
         await updateOrderStatus(saved.id, "CANCELADO", "REJECTED");
         console.error("[checkout] Falha ao gerar Pix", orderNumber, pixRes.error);
-        return { success: false, error: "Não foi possível gerar o Pix agora. Tente novamente em instantes." };
+        return { success: false, error: pixRes.error || "Não foi possível gerar o Pix agora. Tente novamente em instantes." };
       }
 
       saved =
