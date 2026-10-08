@@ -16,6 +16,7 @@ import {
 import { db } from "@/lib/db";
 import { deleteBlobsSafely } from "@/lib/blob-storage";
 import { getProductById } from "@/lib/catalog";
+import { generateVariantSku } from "@/lib/sku";
 
 /**
  * Server Action de Login Administrativo.
@@ -196,7 +197,11 @@ export async function saveProductAction(payload: SaveProductPayload) {
       for (const c of cupulaValues) {
         finalVariants.push({
           id: `var_${productId}_${b.id.replace(/^val_/, "")}_${c.id.replace(/^val_/, "")}`,
-          sku: `MKH-${cleanSlug.slice(0, 6).toUpperCase()}-${b.name.slice(0, 3).toUpperCase()}-${c.name.slice(0, 3).toUpperCase()}`,
+          sku: generateVariantSku({
+            productSlug: cleanSlug,
+            categorySlug: payload.categorySlug,
+            optionValueNames: [b.name, c.name],
+          }),
           priceCents: Math.round(payload.priceCents),
           compareAtPriceCents: payload.compareAtPriceCents
             ? Math.round(payload.compareAtPriceCents)
@@ -245,7 +250,11 @@ export async function saveProductAction(payload: SaveProductPayload) {
     finalVariants = [
       {
         id: `var_${productId}_main`,
-        sku: `MKH-${cleanSlug.slice(0, 6).toUpperCase()}-B1-C1`,
+        sku: generateVariantSku({
+          productSlug: cleanSlug,
+          categorySlug: payload.categorySlug,
+          optionValueNames: [payload.colorName || "Terracota", "Branco Marfim"],
+        }),
         priceCents: Math.round(payload.priceCents),
         compareAtPriceCents: payload.compareAtPriceCents
           ? Math.round(payload.compareAtPriceCents)
@@ -277,7 +286,11 @@ export async function saveProductAction(payload: SaveProductPayload) {
     finalVariants = [
       {
         id: `var_${productId}_main`,
-        sku: `MKH-${cleanSlug.slice(0, 8).toUpperCase()}-${Date.now().toString().slice(-4)}`,
+        sku: generateVariantSku({
+          productSlug: cleanSlug,
+          categorySlug: payload.categorySlug,
+          optionValueNames: payload.colorName && payload.colorName !== "Padrão" ? [payload.colorName] : [],
+        }),
         priceCents: Math.round(payload.priceCents),
         compareAtPriceCents: payload.compareAtPriceCents
           ? Math.round(payload.compareAtPriceCents)
@@ -535,12 +548,36 @@ export async function saveProductAction(payload: SaveProductPayload) {
 
           // 4. Criar ProductVariants e associar em ProductVariantOptionValue
           const variantOptionValuesData: Array<{ variantId: string; optionValueId: string }> = [];
+          const usedSkusInBatch = new Set<string>();
 
-          for (const variant of finalVariants) {
+          for (let vi = 0; vi < finalVariants.length; vi++) {
+            const variant = finalVariants[vi];
+            let targetSku = variant.sku;
+
+            // Evita duplicação dentro do próprio conjunto
+            if (usedSkusInBatch.has(targetSku)) {
+              targetSku = `${targetSku}-${vi + 1}`;
+            }
+
+            // Evita colisão com SKUs de outros produtos existentes
+            const existingWithSku = await tx.productVariant.findFirst({
+              where: {
+                sku: targetSku,
+                productId: { not: productRecord.id },
+              },
+              select: { id: true },
+            });
+
+            if (existingWithSku) {
+              targetSku = `${targetSku}-${vi + 1}`;
+            }
+
+            usedSkusInBatch.add(targetSku);
+
             const createdVar = await tx.productVariant.create({
               data: {
                 productId: productRecord.id,
-                sku: variant.sku,
+                sku: targetSku,
                 priceCents: variant.priceCents,
                 compareAtPriceCents: variant.compareAtPriceCents,
                 weightGrams: variant.weightGrams,
@@ -592,8 +629,12 @@ export async function saveProductAction(payload: SaveProductPayload) {
       }
     }
   } catch (err) {
+    console.error("[saveProductAction] Erro no banco de dados:", err);
     assertDevFallbackAllowed(err);
-    // Mantém no repositório em memória (somente em desenvolvimento)
+    return {
+      success: false,
+      error: `Não foi possível salvar o produto: ${err instanceof Error ? err.message : String(err)}`,
+    };
   }
 
   newProduct.id = savedProductId;

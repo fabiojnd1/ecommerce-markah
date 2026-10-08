@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { saveProductAction, toggleVariantActiveAction } from "@/server/admin-actions";
 import { formatVariantDisplayName } from "@/lib/catalog";
 import { formatCents } from "@/lib/pricing";
+import { generateVariantSku } from "@/lib/sku";
 import type { SeedProduct, SeedCategory, SeedVariant, SeedOption } from "@/lib/data/catalog-seed";
 import { ProductPhotosManager, type ProductPhotoItem } from "./product-photos-manager";
 
@@ -355,18 +356,13 @@ export function ProductForm({ initialProduct, categories }: ProductFormProps) {
               comboIds.every((id) => v.selectedOptionValueIds.includes(id))
           );
 
-          const skuSuffix = comboVals
-            .map((v) =>
-              v.name
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "")
-                .replace(/[^a-zA-Z0-9]/g, "")
-                .slice(0, 3)
-                .toUpperCase()
-            )
-            .join("-");
+          const fallbackSku = generateVariantSku({
+            productSlug: cleanSlug,
+            categorySlug,
+            optionValueNames: comboVals.map((v) => v.name),
+            suffixIndex: idx,
+          });
 
-          const fallbackSku = `MKH-${cleanSlug.slice(0, 6).toUpperCase()}-${skuSuffix || idx + 1}`;
           const fallbackId = `var_${cleanSlug}_${comboVals.map((v) => v.id.replace(/^val_/, "")).join("_")}`;
 
           return {
@@ -418,12 +414,16 @@ export function ProductForm({ initialProduct, categories }: ProductFormProps) {
         }
 
         const existing = variantsList[0] || initialProduct?.variants[0];
+        const singleSku = generateVariantSku({
+          productSlug: cleanSlug,
+          categorySlug,
+          optionValueNames: valName !== "Padrão" ? [valName] : [],
+        });
+
         variantsToSave = [
           {
             id: existing ? existing.id : `var_${cleanSlug}_main`,
-            sku:
-              existing?.sku ||
-              `MKH-${cleanSlug.slice(0, 8).toUpperCase()}-${Date.now().toString().slice(-4)}`,
+            sku: existing?.sku || singleSku,
             priceCents: existing ? existing.priceCents : priceCents,
             compareAtPriceCents:
               existing !== undefined
@@ -495,8 +495,13 @@ export function ProductForm({ initialProduct, categories }: ProductFormProps) {
       } else {
         setError(res.error || "Erro ao salvar produto.");
       }
-    } catch {
-      setError("Erro inesperado no servidor ao salvar produto.");
+    } catch (err) {
+      console.error("[product-form] Erro ao submeter formulário:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Erro inesperado no servidor ao salvar produto."
+      );
     } finally {
       setLoading(false);
     }
