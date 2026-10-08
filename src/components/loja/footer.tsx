@@ -1,12 +1,29 @@
-import { WHATSAPP_NUMBER } from "@/lib/site-config";
+﻿import { WHATSAPP_NUMBER } from "@/lib/site-config";
 import Link from "next/link";
 import Image from "next/image";
 import { ShieldCheck, Truck, RefreshCw, CreditCard, MessageCircle } from "lucide-react";
 
-export function Footer() {
+interface FooterProps {
+  whatsappNumber?: string;
+  instagramHandle?: string;
+  pixDiscountPercent?: number;
+  maxInstallmentsFree?: number;
+  freeShippingThresholdCents?: number;
+}
+
+export function Footer({
+  whatsappNumber,
+  instagramHandle,
+  pixDiscountPercent = 5,
+  maxInstallmentsFree = 3,
+  freeShippingThresholdCents = 20000,
+}: FooterProps = {}) {
+  const zap = (whatsappNumber || WHATSAPP_NUMBER).replace(/\D/g, "");
+  const insta = (instagramHandle || "markah_br").replace(/^@/, "");
+  const freeShippingReais = Math.round(freeShippingThresholdCents / 100);
   return (
     <footer className="bg-ink text-white border-t border-white/10 mt-16 lg:mt-24">
-      {/* Faixa de Garantias e Confiança */}
+      {/* Faixa de Garantias e ConfianÃ§a */}
       <div className="border-b border-white/10 py-10 bg-black/25">
         <div className="max-w-container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8">
@@ -15,8 +32,8 @@ export function Footer() {
                 <Truck className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold">Frete Grátis</h4>
-                <p className="text-xs text-white/60">Em compras a partir de R$ 200</p>
+                <h4 className="text-sm font-semibold">Frete GrÃ¡tis</h4>
+                <p className="text-xs text-white/60">Em compras a partir de R$ ${freeShippingReais}</p>
               </div>
             </div>
 
@@ -25,8 +42,8 @@ export function Footer() {
                 <CreditCard className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-semibold">5% OFF no Pix</h4>
-                <p className="text-xs text-white/60">Ou até 3x sem juros no cartão</p>
+                <h4 className="text-sm font-semibold">${pixDiscountPercent}% OFF no Pix</h4>
+                <p className="text-xs text-white/60">Ou até ${maxInstallmentsFree}x sem juros no cartÃ£o</p>
               </div>
             </div>
 
@@ -36,7 +53,7 @@ export function Footer() {
               </div>
               <div>
                 <h4 className="text-sm font-semibold">Troca Garantida</h4>
-                <p className="text-xs text-white/60">7 dias para troca ou devolução</p>
+                <p className="text-xs text-white/60">7 dias para troca ou devoluÃ§Ã£o</p>
               </div>
             </div>
 
@@ -53,10 +70,10 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Conteúdo Principal do Rodapé */}
+      {/* ConteÃºdo Principal do RodapÃ© */}
       <div className="max-w-container mx-auto px-4 sm:px-6 lg:px-8 py-14">
         <div className="grid grid-cols-2 gap-x-5 gap-y-10 sm:gap-x-8 lg:grid-cols-5">
-          {/* Apresentação da Marca */}
+          {/* ApresentaÃ§Ã£o da Marca */}
           <div className="col-span-2 space-y-4 lg:col-span-2">
             <Link href="/" className="inline-block">
               <Image
@@ -68,12 +85,12 @@ export function Footer() {
               />
             </Link>
             <p className="text-sm text-white/70 max-w-sm leading-relaxed">
-              Design autoral e objetos decorativos impressos em 3D de alta precisão.
-              Luminárias, vasos e peças exclusivas produzidas com responsabilidade e cuidado no Brasil.
+              Design autoral e objetos decorativos impressos em 3D de alta precisÃ£o.
+              LuminÃ¡rias, vasos e peÃ§as exclusivas produzidas com responsabilidade e cuidado no Brasil.
             </p>
             <div className="flex items-center gap-3 pt-2">
               <a
-                href="https://instagram.com/markah_br"
+                href={`https://instagram.com/${insta}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram @markah_br"
@@ -91,7 +108,7 @@ export function Footer() {
                 </svg>
               </a>
               <a
-                href={`https://wa.me/${WHATSAPP_NUMBER}`}
+                href={`https://wa.me/${zap}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Fale conosco no WhatsApp"
@@ -105,12 +122,12 @@ export function Footer() {
           {/* Categorias */}
           <div>
             <h3 className="text-xs uppercase tracking-wider font-semibold text-white/40 mb-4 font-mono">
-              Catálogo
+              CatÃ¡logo
             </h3>
             <ul className="space-y-2.5 text-sm text-white/75">
               <li>
                 <Link href="/luminarias-de-mesa" className="hover:text-white transition-colors">
-                  Luminárias de mesa
+                  LuminÃ¡rias de mesa
                 </Link>
               </li>
               <li>
@@ -120,7 +137,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/vasos" className="hover:text-white transition-colors">
-                  Vasos e Cachepôs
+                  Vasos e CachepÃ´s
                 </Link>
               </li>
               <li>
@@ -154,7 +171,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/tecnologia-3d" className="hover:text-white transition-colors">
-                  Tecnologia de Impressão 3D
+                  Tecnologia de ImpressÃ£o 3D
                 </Link>
               </li>
               <li>
@@ -170,20 +187,20 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Políticas e Ajuda */}
+          {/* PolÃ­ticas e Ajuda */}
           <div>
             <h3 className="text-xs uppercase tracking-wider font-semibold text-white/40 mb-4 font-mono">
-              Políticas & Termos
+              PolÃ­ticas & Termos
             </h3>
             <ul className="space-y-2.5 text-sm text-white/75">
               <li>
                 <Link href="/envio" className="hover:text-white transition-colors">
-                  Política de Envio e Prazo
+                  PolÃ­tica de Envio e Prazo
                 </Link>
               </li>
               <li>
                 <Link href="/trocas" className="hover:text-white transition-colors">
-                  Trocas e Devoluções
+                  Trocas e DevoluÃ§Ãµes
                 </Link>
               </li>
               <li>
@@ -200,12 +217,12 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Linha Divisória */}
+        {/* Linha DivisÃ³ria */}
         <div className="border-t border-white/10 mt-12 pt-8 flex flex-col md:flex-row md:items-center justify-between gap-6 text-xs text-white/50">
           <div>
-            <p>© {new Date().getFullYear()} Markah Brasil. Todos os direitos reservados.</p>
+            <p>Â© {new Date().getFullYear()} Markah Brasil. Todos os direitos reservados.</p>
             <p className="mt-1">
-              Peças artesanais e decorativas impressas em 3D. Produzido com orgulho no Brasil.
+              PeÃ§as artesanais e decorativas impressas em 3D. Produzido com orgulho no Brasil.
             </p>
           </div>
 
@@ -214,7 +231,7 @@ export function Footer() {
             <span className="font-semibold text-white/70">Pagamento:</span>
             <div className="flex flex-wrap items-center gap-2 text-white/80">
               <span className="px-2 py-1 bg-white/10 rounded font-semibold text-verde text-[11px]">PIX</span>
-              <span className="px-2 py-1 bg-white/10 rounded text-[11px]">Cartão até 3x</span>
+              <span className="px-2 py-1 bg-white/10 rounded text-[11px]">CartÃ£o atÃ© 3x</span>
               <span className="px-2 py-1 bg-white/10 rounded text-[11px]">Mercado Pago</span>
             </div>
           </div>

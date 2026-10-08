@@ -1,3 +1,4 @@
+﻿import { getStoreSettings } from "@/lib/settings-repository";
 import Image from "next/image";
 import { WHATSAPP_NUMBER } from "@/lib/site-config";
 import Link from "next/link";
@@ -11,15 +12,17 @@ import { listGalleryPosts } from "@/lib/social-proof-repository";
 export const dynamic = "force-dynamic";
 
 const categoryImages: Record<string, { src: string; alt: string }> = {
-  "luminarias-de-mesa": { src: "/products/luminaria-saturno-off.svg", alt: "Luminária Saturno em terracota" },
+  "luminarias-de-mesa": { src: "/products/luminaria-saturno-off.svg", alt: "LuminÃ¡ria Saturno em terracota" },
   pendentes: { src: "/products/pendente-origami-off.svg", alt: "Pendente Origami" },
   vasos: { src: "/products/vaso-facetado-hera-1.svg", alt: "Vaso facetado Hera" },
-  cachepos: { src: "/products/cachepo-torus-1.svg", alt: "Cachepô Torus" },
-  plantarios: { src: "/products/plantario-oasis-1.svg", alt: "Plantário Oasis" },
+  cachepos: { src: "/products/cachepo-torus-1.svg", alt: "CachepÃ´ Torus" },
+  plantarios: { src: "/products/plantario-oasis-1.svg", alt: "PlantÃ¡rio Oasis" },
   organizadores: { src: "/products/organizador-wave-1.svg", alt: "Organizador Wave" },
 };
 
 export default async function HomePage() {
+  const storeSettings = await getStoreSettings();
+  const whatsappNumber = storeSettings.whatsappNumber || WHATSAPP_NUMBER;
   const [categories, lancamentos, maisVendidos, galleryPosts] = await Promise.all([
     getCategories(),
     getProducts({ collectionSlug: "lancamentos", limit: 4 }),
@@ -44,18 +47,18 @@ export default async function HomePage() {
                 Design autoral, feito camada por camada.
               </h1>
               <p className="max-w-xl text-base leading-relaxed text-text-muted sm:text-lg">
-                Peças impressas em 3D no Brasil para iluminar sua casa e deixar cada ambiente com a sua cara.
+                PeÃ§as impressas em 3D no Brasil para iluminar sua casa e deixar cada ambiente com a sua cara.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3 pt-1">
               <Link href="/produtos">
                 <Button variant="primary" size="lg" className="gap-2">
-                  Explorar peças <ArrowRight className="h-4 w-4" />
+                  Explorar peÃ§as <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <Link href="/sobre">
-                <Button variant="outline" size="lg">Conheça a Markah</Button>
+                <Button variant="outline" size="lg">ConheÃ§a a Markah</Button>
               </Link>
             </div>
 
@@ -69,7 +72,7 @@ export default async function HomePage() {
           <div className="relative aspect-[1024/764] w-full overflow-hidden rounded-2xl bg-[#24211E] shadow-hover">
             <Image
               src="/hero-banner.webp"
-              alt="Luminária de mesa Markah com iluminação acolhedora e design autoral impresso em 3D"
+              alt="LuminÃ¡ria de mesa Markah com iluminaÃ§Ã£o acolhedora e design autoral impresso em 3D"
               fill
               priority
               sizes="(max-width: 1024px) 100vw, 55vw"
@@ -84,11 +87,11 @@ export default async function HomePage() {
         <section className="max-w-container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-text-muted">Encontre a peça certa</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-text-muted">Encontre a peÃ§a certa</span>
               <h2 className="mt-1 font-display text-2xl font-semibold text-ink sm:text-3xl">Explore por categoria</h2>
             </div>
             <Link href="/produtos" className="inline-flex items-center gap-1 text-sm font-semibold text-text hover:text-magenta">
-              Ver catálogo completo <ArrowRight className="h-4 w-4" />
+              Ver catÃ¡logo completo <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
@@ -118,16 +121,16 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Lançamentos */}
+        {/* LanÃ§amentos */}
         {lancamentos.length > 0 && (
           <section className="max-w-container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-magenta">Recém saídos da impressora</span>
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-magenta">RecÃ©m saÃ­dos da impressora</span>
                 <h2 className="mt-1 font-display text-2xl font-semibold text-ink sm:text-3xl">Novidades para sua casa</h2>
               </div>
               <Link href="/lancamentos" className="inline-flex items-center gap-1 text-sm font-semibold text-text hover:text-magenta">
-                Ver todos os lançamentos <ArrowRight className="h-4 w-4" />
+                Ver todos os lanÃ§amentos <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
@@ -136,21 +139,21 @@ export default async function HomePage() {
           </section>
         )}
 
-        {/* Personalização */}
+        {/* PersonalizaÃ§Ã£o */}
         <section className="max-w-container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative grid overflow-hidden rounded-2xl bg-ink text-white lg:grid-cols-[1fr_0.8fr]">
             <div className="absolute -right-16 -top-24 h-80 w-80 rounded-full bg-violeta/25 blur-3xl" />
             <div className="relative z-10 space-y-5 p-7 sm:p-10 lg:p-14">
               <span className="inline-flex items-center gap-2 rounded-full bg-violeta px-3 py-1.5 text-xs font-semibold uppercase tracking-wide">
-                <Sparkles className="h-3.5 w-3.5" /> Feito para você
+                <Sparkles className="h-3.5 w-3.5" /> Feito para vocÃª
               </span>
-              <h2 className="max-w-xl font-display text-3xl font-semibold leading-tight sm:text-4xl">Uma ideia sua pode virar uma peça única.</h2>
+              <h2 className="max-w-xl font-display text-3xl font-semibold leading-tight sm:text-4xl">Uma ideia sua pode virar uma peÃ§a Ãºnica.</h2>
               <p className="max-w-xl text-sm leading-relaxed text-white/75 sm:text-base">
-                Criamos letras-caixa, logotipos e letreiros em 3D sob medida para marcas, eventos e espaços especiais.
+                Criamos letras-caixa, logotipos e letreiros em 3D sob medida para marcas, eventos e espaÃ§os especiais.
               </p>
               <div className="flex flex-wrap gap-3 pt-1">
-                <Link href="/letras-caixa"><Button variant="primary" className="gap-2 border-0 bg-violeta text-white hover:bg-violeta/90">Peça um orçamento <ArrowRight className="h-4 w-4" /></Button></Link>
-                <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=Ol%C3%A1!%20Gostaria%20de%20um%20or%C3%A7amento%20de%20letras-caixa.`} target="_blank" rel="noopener noreferrer">
+                <Link href="/letras-caixa"><Button variant="primary" className="gap-2 border-0 bg-violeta text-white hover:bg-violeta/90">PeÃ§a um orÃ§amento <ArrowRight className="h-4 w-4" /></Button></Link>
+                <a href={`https://wa.me/${whatsappNumber}?text=Ol%C3%A1!%20Gostaria%20de%20um%20or%C3%A7amento%20de%20letras-caixa.`} target="_blank" rel="noopener noreferrer">
                   <Button variant="secondary" className="border-white/30 text-white hover:bg-white/10">Fale com a gente</Button>
                 </a>
               </div>
@@ -160,7 +163,7 @@ export default async function HomePage() {
                 <div className="max-w-xs space-y-3">
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-white"><Sparkles className="h-7 w-7" /></div>
                   <p className="font-display text-2xl font-semibold">Sua marca em 3D</p>
-                  <p className="text-sm leading-relaxed text-white/70">Forma, cor e iluminação pensadas para o seu projeto.</p>
+                  <p className="text-sm leading-relaxed text-white/70">Forma, cor e iluminaÃ§Ã£o pensadas para o seu projeto.</p>
                 </div>
               </div>
             </div>
@@ -172,7 +175,7 @@ export default async function HomePage() {
           <section className="max-w-container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-laranja">Escolhas de quem já levou Markah para casa</span>
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-laranja">Escolhas de quem jÃ¡ levou Markah para casa</span>
                 <h2 className="mt-1 font-display text-2xl font-semibold text-ink sm:text-3xl">Mais queridos pelos clientes</h2>
               </div>
               <Link href="/mais-vendidos" className="inline-flex items-center gap-1 text-sm font-semibold text-text hover:text-laranja">
@@ -195,7 +198,7 @@ export default async function HomePage() {
               <span className="text-xs font-semibold uppercase tracking-[0.14em] text-verde">Design encontra tecnologia</span>
               <h2 className="mt-2 font-display text-2xl font-semibold text-ink sm:text-3xl">Feita com cuidado, do primeiro desenho ao acabamento.</h2>
               <p className="mt-4 text-sm leading-relaxed text-text-muted sm:text-base">
-                Cada peça é modelada e impressa sob demanda no Brasil. Assim, cuidamos dos detalhes e produzimos somente o que vai encontrar um lugar especial na sua casa.
+                Cada peÃ§a Ã© modelada e impressa sob demanda no Brasil. Assim, cuidamos dos detalhes e produzimos somente o que vai encontrar um lugar especial na sua casa.
               </p>
             </div>
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -206,13 +209,13 @@ export default async function HomePage() {
               </div>
               <div className="rounded-xl bg-surface-alt/70 p-5 text-center">
                 <Printer className="mx-auto h-6 w-6 text-ciano" />
-                <h3 className="mt-3 font-display font-semibold text-ink">Impressão 3D</h3>
-                <p className="mt-1 text-sm text-text-muted">Tecnologia e atenção em cada camada da peça.</p>
+                <h3 className="mt-3 font-display font-semibold text-ink">ImpressÃ£o 3D</h3>
+                <p className="mt-1 text-sm text-text-muted">Tecnologia e atenÃ§Ã£o em cada camada da peÃ§a.</p>
               </div>
               <div className="rounded-xl bg-surface-alt/70 p-5 text-center">
                 <PackageCheck className="mx-auto h-6 w-6 text-verde" />
                 <h3 className="mt-3 font-display font-semibold text-ink">Feita sob encomenda</h3>
-                <p className="mt-1 text-sm text-text-muted">Produção cuidadosa, com prazo informado na compra.</p>
+                <p className="mt-1 text-sm text-text-muted">ProduÃ§Ã£o cuidadosa, com prazo informado na compra.</p>
               </div>
             </div>
           </div>

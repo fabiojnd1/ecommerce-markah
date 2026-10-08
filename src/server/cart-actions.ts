@@ -1,5 +1,6 @@
-"use server";
+﻿"use server";
 
+import { getStoreSettings } from "@/lib/settings-repository";
 import {
   calculateCartTotals,
   type AppliedCoupon,
@@ -24,7 +25,7 @@ export interface ServerCartSummaryResult {
 }
 
 /**
- * Valida um cupom no servidor e verifica requisitos como vigência e pedido mínimo (Fase 6).
+ * Valida um cupom no servidor e verifica requisitos como vigÃªncia e pedido mÃ­nimo (Fase 6).
  */
 export async function validateCouponAction(
   rawCode: string,
@@ -33,14 +34,14 @@ export async function validateCouponAction(
   const code = (rawCode || "").trim().toUpperCase();
 
   if (!code) {
-    return { success: false, error: "Digite um código de cupom." };
+    return { success: false, error: "Digite um cÃ³digo de cupom." };
   }
 
   const result = await validateCouponEligibility(code, subtotalCents);
   if (!result.isValid || !result.coupon) {
     return {
       success: false,
-      error: result.error || `Cupom "${code}" inválido ou expirado.`,
+      error: result.error || `Cupom "${code}" invÃ¡lido ou expirado.`,
     };
   }
 
@@ -82,10 +83,14 @@ export async function calculateServerCartTotalsAction(
       }
     }
 
+    const settings = await getStoreSettings();
     const totals = calculateCartTotals({
       items,
       shippingPriceCents,
       coupon: appliedCoupon,
+      pixDiscountPercent: settings.pixDiscountPercent,
+      freeShippingThresholdCents: settings.freeShippingThresholdCents,
+      maxInstallments: settings.maxInstallmentsFree,
     });
 
     return {

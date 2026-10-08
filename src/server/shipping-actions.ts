@@ -1,10 +1,11 @@
-"use server";
+﻿"use server";
 
 import {
   calculateShippingQuotes,
   type ShippingItemInput,
   type ShippingQuote,
 } from "@/lib/shipping/melhor-envio";
+import { getStoreSettings } from "@/lib/settings-repository";
 
 export interface ShippingActionResult {
   success: boolean;
@@ -32,9 +33,14 @@ export async function getShippingQuotesAction(
       };
     }
 
+    const settings = await getStoreSettings();
+
     const quotes = await calculateShippingQuotes({
       destinationPostalCode: cleanCep,
       items,
+      originPostalCode: settings.originPostalCode,
+      freeShippingThresholdCents: settings.freeShippingThresholdCents,
+      productionDays: settings.defaultProductionDays,
     });
 
     return {

@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 import { getOrderById } from "@/lib/orders-repository";
+import { getStoreSettings } from "@/lib/settings-repository";
 import { OrderSuccessClient } from "@/components/checkout/order-success-client";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ interface PageProps {
 export default async function OrderSuccessPage({ params }: PageProps) {
   const { orderId } = await params;
   const order = await getOrderById(orderId);
+  const settings = await getStoreSettings();
 
   if (!order) {
     return (
@@ -37,5 +39,5 @@ export default async function OrderSuccessPage({ params }: PageProps) {
     );
   }
 
-  return <OrderSuccessClient initialOrder={order} />;
+  return <OrderSuccessClient initialOrder={order} whatsappNumber={settings.whatsappNumber} />;
 }

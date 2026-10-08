@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { WHATSAPP_NUMBER } from "@/lib/site-config";
 
@@ -23,9 +23,11 @@ import type { OrderRecord } from "@/lib/orders-repository";
 
 interface OrderSuccessClientProps {
   initialOrder: OrderRecord;
+  whatsappNumber?: string;
 }
 
-export function OrderSuccessClient({ initialOrder }: OrderSuccessClientProps) {
+export function OrderSuccessClient({ initialOrder, whatsappNumber }: OrderSuccessClientProps) {
+  const activeWhatsapp = (whatsappNumber || WHATSAPP_NUMBER).replace(/\D/g, "");
   const [order, setOrder] = useState<OrderRecord>(initialOrder);
   const [copied, setCopied] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState(1800); // 30 minutos
@@ -50,7 +52,7 @@ export function OrderSuccessClient({ initialOrder }: OrderSuccessClientProps) {
     return () => clearInterval(timer);
   }, [isPaid, isPix]);
 
-  // Polling automático de status a cada 5 segundos para o Pix (PRD §5.4)
+  // Polling automÃ¡tico de status a cada 5 segundos para o Pix (PRD Â§5.4)
   useEffect(() => {
     if (isPaid) return;
 
@@ -85,8 +87,8 @@ export function OrderSuccessClient({ initialOrder }: OrderSuccessClientProps) {
     seconds
   ).padStart(2, "0")}`;
 
-  const whatsappSupportUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    `Olá! Gostaria de falar sobre o meu pedido #${order.orderNumber} na Markah Brasil.`
+  const whatsappSupportUrl = `https://wa.me/${activeWhatsapp}?text=${encodeURIComponent(
+    `OlÃ¡! Gostaria de falar sobre o meu pedido #${order.orderNumber} na Markah Brasil.`
   )}`;
 
   return (
@@ -117,18 +119,18 @@ export function OrderSuccessClient({ initialOrder }: OrderSuccessClientProps) {
         {isPaid ? (
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-verde/10 text-verde font-semibold text-xs animate-in fade-in duration-300">
             <Check className="w-4 h-4" />
-            <span>Pagamento Aprovado — Produção sob demanda iniciada!</span>
+            <span>Pagamento Aprovado â€” ProduÃ§Ã£o sob demanda iniciada!</span>
           </div>
         ) : (
           <p className="text-xs sm:text-sm text-text-muted max-w-md mx-auto">
             {isPix
-              ? "Aguardando pagamento via Pix. Pague agora para iniciar a produção da sua peça."
-              : "Seu pedido foi registrado e está sendo processado."}
+              ? "Aguardando pagamento via Pix. Pague agora para iniciar a produÃ§Ã£o da sua peÃ§a."
+              : "Seu pedido foi registrado e estÃ¡ sendo processado."}
           </p>
         )}
       </div>
 
-      {/* Bloco Exclusivo de Cobrança Pix */}
+      {/* Bloco Exclusivo de CobranÃ§a Pix */}
       {isPix && !isPaid && order.pixQrCode && (
         <div className="bg-surface rounded-card border border-border p-6 sm:p-8 space-y-6 shadow-sm">
           <div className="text-center space-y-1">
@@ -165,7 +167,7 @@ export function OrderSuccessClient({ initialOrder }: OrderSuccessClientProps) {
           {/* Campo Copia e Cola */}
           <div className="space-y-2 max-w-md mx-auto">
             <label className="block text-xs font-semibold text-text uppercase tracking-wider font-mono text-center">
-              Código Pix Copia e Cola
+              CÃ³digo Pix Copia e Cola
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -201,23 +203,23 @@ export function OrderSuccessClient({ initialOrder }: OrderSuccessClientProps) {
         </div>
       )}
 
-      {/* Linha do Tempo e Prazos Transparentes (PRD §5.3) */}
+      {/* Linha do Tempo e Prazos Transparentes (PRD Â§5.3) */}
       <div className="bg-surface rounded-card border border-border p-6 space-y-4 shadow-xs">
         <h3 className="text-sm font-bold font-display text-ink uppercase tracking-wider font-mono flex items-center gap-2">
           <Truck className="w-4 h-4 text-laranja" />
-          <span>Prazo de Produção & Entrega</span>
+          <span>Prazo de ProduÃ§Ã£o & Entrega</span>
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div className="p-3.5 rounded-lg bg-surface-alt/70 space-y-1">
             <span className="text-text-muted font-medium block">
-              1. Fabricação Sob Demanda
+              1. FabricaÃ§Ã£o Sob Demanda
             </span>
             <p className="font-bold text-ink text-sm">
-              {order.productionDays} dias úteis
+              {order.productionDays} dias Ãºteis
             </p>
             <p className="text-[11px] text-text-muted">
-              Impressão 3D de alta precisão com materiais sustentáveis (PLA/PETG).
+              ImpressÃ£o 3D de alta precisÃ£o com materiais sustentÃ¡veis (PLA/PETG).
             </p>
           </div>
 
@@ -226,16 +228,16 @@ export function OrderSuccessClient({ initialOrder }: OrderSuccessClientProps) {
               2. Envio ({order.shippingCarrier})
             </span>
             <p className="font-bold text-ink text-sm">
-              {order.carrierDays} dias úteis
+              {order.carrierDays} dias Ãºteis
             </p>
             <p className="text-[11px] text-text-muted">
-              Prazo total estimado: <strong>{order.totalDeliveryDays} dias úteis</strong> após a confirmação.
+              Prazo total estimado: <strong>{order.totalDeliveryDays} dias Ãºteis</strong> apÃ³s a confirmaÃ§Ã£o.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Resumo dos Itens e Endereço */}
+      {/* Resumo dos Itens e EndereÃ§o */}
       <div className="bg-surface rounded-card border border-border p-6 space-y-5 shadow-xs">
         <h3 className="text-sm font-bold font-display text-ink uppercase tracking-wider font-mono border-b border-border pb-3">
           Detalhes do Pedido
@@ -257,7 +259,7 @@ export function OrderSuccessClient({ initialOrder }: OrderSuccessClientProps) {
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-ink truncate">{item.productName}</p>
                 <p className="text-[11px] text-text-muted">
-                  {item.variantName} · Qtd: {item.quantity}
+                  {item.variantName} Â· Qtd: {item.quantity}
                 </p>
               </div>
               <span className="font-mono font-medium text-text">
@@ -267,15 +269,15 @@ export function OrderSuccessClient({ initialOrder }: OrderSuccessClientProps) {
           ))}
         </div>
 
-        {/* Endereço de Entrega */}
+        {/* EndereÃ§o de Entrega */}
         <div className="pt-3 border-t border-border text-xs text-text-muted space-y-1">
-          <p className="font-semibold text-ink">Endereço de Entrega:</p>
+          <p className="font-semibold text-ink">EndereÃ§o de Entrega:</p>
           <p>
             {order.shippingStreet}, {order.shippingNumber}{" "}
             {order.shippingComplement ? `(${order.shippingComplement})` : ""}
           </p>
           <p>
-            {order.shippingNeighborhood} — {order.shippingCity}/{order.shippingState} · CEP: {order.shippingPostalCode}
+            {order.shippingNeighborhood} â€” {order.shippingCity}/{order.shippingState} Â· CEP: {order.shippingPostalCode}
           </p>
         </div>
 
@@ -296,7 +298,7 @@ export function OrderSuccessClient({ initialOrder }: OrderSuccessClientProps) {
           <div className="flex justify-between">
             <span className="text-text-muted">Frete ({order.shippingCarrier})</span>
             <span className="font-mono">
-              {order.isFreeShipping ? "Grátis" : formatCents(order.shippingPriceCents)}
+              {order.isFreeShipping ? "GrÃ¡tis" : formatCents(order.shippingPriceCents)}
             </span>
           </div>
 
@@ -314,7 +316,7 @@ export function OrderSuccessClient({ initialOrder }: OrderSuccessClientProps) {
         </div>
       </div>
 
-      {/* Ações Finais: Suporte WhatsApp e Continuar Comprando */}
+      {/* AÃ§Ãµes Finais: Suporte WhatsApp e Continuar Comprando */}
       <div className="flex flex-col sm:flex-row gap-3 pt-2">
         <a
           href={whatsappSupportUrl}
@@ -347,7 +349,7 @@ export function OrderSuccessClient({ initialOrder }: OrderSuccessClientProps) {
       <div className="text-center pt-2">
         <p className="text-[11px] text-text-muted flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-verde" />
-          <span>Confirmação enviada para {order.customerEmail}</span>
+          <span>ConfirmaÃ§Ã£o enviada para {order.customerEmail}</span>
         </p>
       </div>
     </div>

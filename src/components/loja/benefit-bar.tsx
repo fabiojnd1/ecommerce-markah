@@ -1,35 +1,39 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { Sparkles, Truck, CreditCard } from "lucide-react";
-
-const benefits = [
-  {
-    icon: Sparkles,
-    text: "5% OFF no Pix à vista",
-    highlight: "5% OFF",
-  },
-  {
-    icon: CreditCard,
-    text: "Até 3x sem juros no cartão",
-    highlight: "3x sem juros",
-  },
-  {
-    icon: Truck,
-    text: "Frete grátis em compras acima de R$ 200",
-    highlight: "Frete grátis",
-  },
-];
+import { useStoreSettings } from "@/lib/store-settings-context";
 
 export function BenefitBar() {
+  const settings = useStoreSettings();
   const [activeIndex, setActiveIndex] = useState(0);
+
+  const freeShippingReais = Math.round(settings.freeShippingThresholdCents / 100);
+
+  const benefits = [
+    {
+      icon: Sparkles,
+      text: `${settings.pixDiscountPercent}% OFF no Pix à vista`,
+      highlight: `${settings.pixDiscountPercent}% OFF`,
+    },
+    {
+      icon: CreditCard,
+      text: `Até ${settings.maxInstallmentsFree}x sem juros no cartão`,
+      highlight: `${settings.maxInstallmentsFree}x sem juros`,
+    },
+    {
+      icon: Truck,
+      text: `Frete grátis em compras acima de R$ ${freeShippingReais}`,
+      highlight: "Frete grátis",
+    },
+  ];
 
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % benefits.length);
     }, 4000);
     return () => clearInterval(timer);
-  }, []);
+  }, [benefits.length]);
 
   return (
     <div
@@ -47,7 +51,7 @@ export function BenefitBar() {
                 <Icon className="w-3.5 h-3.5 text-amarelo shrink-0" />
                 <span>{b.text}</span>
                 {i < benefits.length - 1 && (
-                  <span className="text-white/30 ml-8 lg:ml-12 select-none">·</span>
+                  <span className="text-white/30 ml-8 lg:ml-12 select-none">•</span>
                 )}
               </div>
             );

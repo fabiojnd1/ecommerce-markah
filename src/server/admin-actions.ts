@@ -1,4 +1,5 @@
-"use server";
+﻿"use server";
+import { saveStoreSettingsToDb, getStoreSettings, type StoreSettingsData } from "@/lib/settings-repository";
 
 import { isDatabaseConfigured, assertDevFallbackAllowed } from "@/lib/runtime";
 
@@ -921,36 +922,18 @@ export async function deleteCategoryAction(categoryId: string) {
 /**
  * Server Action para Salvar Configurações da Loja.
  */
-export async function saveStoreSettingsAction(payload: {
-  storeName: string;
-  whatsappNumber: string;
-  instagramHandle: string;
-  originPostalCode: string;
-  pixDiscountPercent: number;
-  maxInstallmentsFree: number;
-  freeShippingThresholdCents: number;
-  defaultProductionDays: number;
-}) {
+export async function saveStoreSettingsAction(payload: StoreSettingsData) {
   await requireAdmin();
-
-  // Em banco Neon (se disponível)
-  try {
-    if (isDatabaseConfigured()) {
-      await db.storeSettings.upsert({
-        where: { id: "default" },
-        update: payload,
-        create: { id: "default", ...payload },
-      });
-    }
-  } catch (err) {
-    assertDevFallbackAllowed(err);
-    // Configurações salvas (somente em desenvolvimento)
-  }
-
+  const saved = await saveStoreSettingsToDb(payload);
   revalidatePath("/admin/configuracoes");
   revalidatePath("/");
+  revalidatePath("/carrinho");
+  revalidatePath("/checkout");
+  return { success: true, settings: saved };
+}
 
-  return { success: true };
+export async function getStoreSettingsAction(): Promise<StoreSettingsData> {
+  return await getStoreSettings();
 }
 
 /**
