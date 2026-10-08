@@ -1,15 +1,16 @@
 import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import Image from "next/image";
-import { PlusCircle, ExternalLink, Copy, Trash2, Edit } from "lucide-react";
+import { PlusCircle, ExternalLink, Copy, Edit } from "lucide-react";
 import { getProducts, getCategories } from "@/lib/catalog";
 import { formatCents } from "@/lib/pricing";
-import { duplicateProductAction, deleteProductAction } from "@/server/admin-actions";
+import { duplicateProductAction } from "@/server/admin-actions";
+import { DeleteProductButton } from "@/components/admin/delete-product-button";
 
 export default async function AdminProdutosPage() {
   await requireAdmin();
   const [products, categories] = await Promise.all([
-    getProducts(),
+    getProducts({ includeInactive: true }),
     getCategories(),
   ]);
 
@@ -51,7 +52,21 @@ export default async function AdminProdutosPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border text-text">
-              {products.map((p) => {
+              {products.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-16 text-center text-text-muted">
+                    <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                      <p className="text-sm font-semibold text-ink">
+                        Nenhum produto cadastrado no momento
+                      </p>
+                      <p className="text-xs text-text-muted">
+                        Seu catálogo está limpo. Comece cadastrando as peças oficiais da loja pelo botão &ldquo;Cadastrar Produto&rdquo; acima.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                products.map((p) => {
                 const defaultVariant = p.variants[0];
                 const category = categories.find((c) => c.slug === p.categorySlug);
 
@@ -140,9 +155,10 @@ export default async function AdminProdutosPage() {
                         <Link
                           href={`/admin/produtos/${p.id}`}
                           title="Editar peça"
-                          className="p-1.5 rounded hover:bg-neutral-100 text-text-muted hover:text-text transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-surface-alt hover:bg-ink hover:text-white border border-border text-[11px] font-semibold text-ink transition-colors"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="w-3.5 h-3.5" />
+                          <span>Editar</span>
                         </Link>
 
                         {/* Duplicar */}
@@ -161,26 +177,16 @@ export default async function AdminProdutosPage() {
                           </button>
                         </form>
 
-                        {/* Excluir */}
-                        <form
-                          action={async () => {
-                            "use server";
-                            await deleteProductAction(p.id);
-                          }}
-                        >
-                          <button
-                            type="submit"
-                            title="Excluir produto"
-                            className="p-1.5 rounded hover:bg-red-50 text-text-muted hover:text-red-600 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </form>
+                        {/* Excluir com confirmação */}
+                        <DeleteProductButton
+                          productId={p.id}
+                          productName={p.name}
+                        />
                       </div>
                     </td>
                   </tr>
                 );
-              })}
+              }))}
             </tbody>
           </table>
         </div>

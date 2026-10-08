@@ -3,14 +3,18 @@
 import Link from "next/link";
 import { Heart, ArrowRight, Trash2, ShoppingBag } from "lucide-react";
 import { useWishlist } from "@/lib/wishlist-context";
-import { SEED_PRODUCTS } from "@/lib/data/catalog-seed";
+import { type SeedProduct } from "@/lib/data/catalog-seed";
 import { ProductCard } from "@/components/loja/product-card";
 import { Button } from "@/components/ui/button";
 
-export function WishlistView() {
+interface WishlistViewProps {
+  products?: SeedProduct[];
+}
+
+export function WishlistView({ products = [] }: WishlistViewProps) {
   const { favorites, clearFavorites } = useWishlist();
 
-  const favoritedProducts = SEED_PRODUCTS.filter((product) =>
+  const favoritedProducts = products.filter((product) =>
     favorites.includes(product.slug)
   );
 

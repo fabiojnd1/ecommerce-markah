@@ -17,6 +17,7 @@ import { formatVariantDisplayName, getVariantColors } from "@/lib/catalog";
 import { validateCouponAction } from "./cart-actions";
 import { incrementCouponUsage } from "@/lib/promotions-repository";
 import { db } from "@/lib/db";
+import { isDatabaseConfigured } from "@/lib/runtime";
 
 export interface CheckoutCustomerInput {
   name: string;
@@ -137,17 +138,8 @@ export async function createOrderAction(
       let foundProduct = null;
       let foundVariant = null;
 
-      for (const p of SEED_PRODUCTS) {
-        const v = p.variants.find((variant) => variant.id === clientItem.variantId);
-        if (v) {
-          foundProduct = p;
-          foundVariant = v;
-          break;
-        }
-      }
-
-      // Se não encontrou no catálogo estático, busca no banco de dados (Prisma)
-      if (!foundProduct || !foundVariant) {
+      // 1. Busca prioritária no banco de dados (Prisma)
+      if (isDatabaseConfigured()) {
         try {
           const dbVariant = await db.productVariant.findUnique({
             where: { id: clientItem.variantId },
@@ -190,6 +182,18 @@ export async function createOrderAction(
           }
         } catch {
           // ignore
+        }
+      }
+
+      // 2. Fallback somente se não encontrou no banco
+      if (!foundProduct || !foundVariant) {
+        for (const p of SEED_PRODUCTS) {
+          const v = p.variants.find((variant) => variant.id === clientItem.variantId);
+          if (v) {
+            foundProduct = p;
+            foundVariant = v;
+            break;
+          }
         }
       }
 

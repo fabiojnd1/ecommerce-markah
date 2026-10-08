@@ -12,6 +12,10 @@ export function isProduction(): boolean {
   return process.env.NODE_ENV === "production";
 }
 
+export function isTestEnvironment(): boolean {
+  return process.env.NODE_ENV === "test" || process.env.VITEST === "true";
+}
+
 /**
  * Dados de demonstração (catálogo e pedidos em memória) só em desenvolvimento,
  * ou quando ALLOW_DEMO_DATA=true for definido explicitamente — útil para rodar

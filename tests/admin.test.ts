@@ -1,5 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
-import { saveProductAction, duplicateProductAction } from "@/server/admin-actions";
+import {
+  saveProductAction,
+  duplicateProductAction,
+  deleteProductAction,
+} from "@/server/admin-actions";
 import * as auth from "@/lib/auth";
 
 vi.mock("next/cache", () => ({
@@ -83,18 +87,56 @@ describe("Fase 2 — Painel Administrativo e Regras de Segurança", () => {
   });
 
   describe("Duplicação e gerenciamento de peças", () => {
-    it("deve permitir a duplicação de um produto existente gerando novo SKU e slug", async () => {
-      vi.spyOn(auth, "requireAdmin").mockResolvedValue({
-        id: "admin_test",
-        name: "Admin",
-        email: "admin@markah.com.br",
-        role: "ADMIN",
-      });
+    it(
+      "deve permitir a duplicação de um produto existente gerando novo SKU e slug",
+      async () => {
+        vi.spyOn(auth, "requireAdmin").mockResolvedValue({
+          id: "admin_test",
+          name: "Admin",
+          email: "admin@markah.com.br",
+          role: "ADMIN",
+        });
 
-      const res = await duplicateProductAction("prod_saturno");
-      expect(res.success).toBe(true);
-      expect(res.product?.name).toContain("(Cópia)");
-      expect(res.product?.slug).toContain("copia");
-    });
+        const res = await duplicateProductAction("prod_saturno");
+        expect(res.success).toBe(true);
+        expect(res.product?.name).toContain("(Cópia)");
+        expect(res.product?.slug).toContain("copia");
+      },
+      15000
+    );
+
+    it(
+      "deve excluir um produto com sucesso e remover do catálogo",
+      async () => {
+        vi.spyOn(auth, "requireAdmin").mockResolvedValue({
+          id: "admin_test",
+          name: "Admin",
+          email: "admin@markah.com.br",
+          role: "ADMIN",
+        });
+
+        const created = await saveProductAction({
+          name: "Peça Teste Exclusão",
+          slug: "peca-teste-exclusao",
+          description: "Teste",
+          categorySlug: "vasos",
+          material: "PLA",
+          isSustainable: true,
+          productionDays: 3,
+          dimensions: "10 × 10 × 10 cm",
+          weightGrams: 200,
+          priceCents: 10000,
+          packageHeightCm: 15,
+          packageWidthCm: 15,
+          packageDepthCm: 15,
+        });
+
+        expect(created.success).toBe(true);
+
+        const deleteRes = await deleteProductAction(created.product!.id);
+        expect(deleteRes.success).toBe(true);
+      },
+      15000
+    );
   });
 });

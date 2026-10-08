@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/auth";
 import { notFound } from "next/navigation";
-import { getProducts, getCategories } from "@/lib/catalog";
+import { getProductById, getCategories } from "@/lib/catalog";
 import { ProductForm } from "@/components/admin/product-form";
 
 interface AdminEditarProdutoPageProps {
@@ -13,12 +13,11 @@ export default async function AdminEditarProdutoPage({
   await requireAdmin();
   const { id } = await params;
 
-  const [products, categories] = await Promise.all([
-    getProducts(),
+  const [product, categories] = await Promise.all([
+    getProductById(id, true),
     getCategories(),
   ]);
 
-  const product = products.find((p) => p.id === id);
   if (!product) {
     notFound();
   }

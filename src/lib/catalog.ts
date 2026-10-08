@@ -1,4 +1,4 @@
-import { isDatabaseConfigured, assertDevFallbackAllowed } from "@/lib/runtime";
+import { isDatabaseConfigured, assertDevFallbackAllowed, isTestEnvironment } from "@/lib/runtime";
 import {
   SEED_CATEGORIES,
   SEED_COLLECTIONS,
@@ -18,6 +18,7 @@ export interface ProductFilterParams {
   maxPriceCents?: number;
   sortBy?: "relevance" | "price-asc" | "price-desc" | "newest";
   limit?: number;
+  includeInactive?: boolean;
 }
 
 /**
@@ -30,16 +31,14 @@ export async function getCategories(): Promise<SeedCategory[]> {
         where: { active: true },
         orderBy: { displayOrder: "asc" },
       });
-      if (dbCategories.length > 0) {
-        return dbCategories.map((c) => ({
-          id: c.id,
-          name: c.name,
-          slug: c.slug,
-          description: c.description || "",
-          displayOrder: c.displayOrder,
-          imageUrl: c.imageUrl || undefined,
-        }));
-      }
+      return dbCategories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        description: c.description || "",
+        displayOrder: c.displayOrder,
+        imageUrl: c.imageUrl || undefined,
+      }));
     }
   } catch (err) {
     assertDevFallbackAllowed(err);
@@ -72,13 +71,14 @@ export async function getFeaturedCollections() {
 export async function getProducts(
   filters: ProductFilterParams = {}
 ): Promise<SeedProduct[]> {
-  let products = [...SEED_PRODUCTS];
+  let products: SeedProduct[] = [];
+  let loadedFromDb = false;
 
   try {
     if (isDatabaseConfigured()) {
       const dbProducts = await db.product.findMany({
         where: {
-          status: "ACTIVE",
+          ...(filters.includeInactive ? { status: { not: "ARCHIVED" } } : { status: "ACTIVE" }),
           ...(filters.categorySlug ? { category: { slug: filters.categorySlug } } : {}),
         },
         include: {
@@ -90,66 +90,69 @@ export async function getProducts(
             include: { values: { orderBy: { displayOrder: "asc" } } },
           },
           variants: {
-            where: { active: true },
+            ...(filters.includeInactive ? {} : { where: { active: true } }),
             include: { optionValues: true },
           },
         },
         orderBy: { createdAt: "desc" },
       });
 
-      if (dbProducts.length > 0) {
-        products = dbProducts.map((p) => ({
-          id: p.id,
-          name: p.name,
-          slug: p.slug,
-          description: p.description,
-          categorySlug: p.category.slug,
-          collectionSlugs: p.collections.map((c) => c.collection.slug),
-          material: p.material as "PLA" | "PETG",
-          isSustainable: p.isSustainable,
-          productionDays: p.productionDays,
-          dimensions: p.dimensions || "",
-          weightGrams: p.weightGrams || 350,
-          socketType: p.socketType || undefined,
-          maxWattage: p.maxWattage || undefined,
-          bulbIncluded: p.bulbIncluded,
-          cordLengthCm: p.cordLengthCm || undefined,
-          waterproof: p.waterproof,
-          tags: [],
-          images: p.images.map((img) => ({
-            id: img.id,
-            url: img.url,
-            alt: img.alt,
-            displayOrder: img.displayOrder,
-            isPrimary: img.isPrimary,
-            isHover: img.isHover,
+      products = dbProducts.map((p) => ({
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        description: p.description,
+        categorySlug: p.category.slug,
+        collectionSlugs: p.collections.map((c) => c.collection.slug),
+        material: p.material as "PLA" | "PETG",
+        isSustainable: p.isSustainable,
+        productionDays: p.productionDays,
+        dimensions: p.dimensions || "",
+        weightGrams: p.weightGrams || 350,
+        socketType: p.socketType || undefined,
+        maxWattage: p.maxWattage || undefined,
+        bulbIncluded: p.bulbIncluded,
+        cordLengthCm: p.cordLengthCm || undefined,
+        waterproof: p.waterproof,
+        tags: [],
+        images: p.images.map((img) => ({
+          id: img.id,
+          url: img.url,
+          alt: img.alt,
+          displayOrder: img.displayOrder,
+          isPrimary: img.isPrimary,
+          isHover: img.isHover,
+        })),
+        options: p.options.map((opt) => ({
+          id: opt.id,
+          name: opt.name,
+          values: opt.values.map((val) => ({
+            id: val.id,
+            name: val.name,
+            colorHex: val.colorHex || undefined,
           })),
-          options: p.options.map((opt) => ({
-            id: opt.id,
-            name: opt.name,
-            values: opt.values.map((val) => ({
-              id: val.id,
-              name: val.name,
-              colorHex: val.colorHex || undefined,
-            })),
-          })),
-          variants: p.variants.map((v) => ({
-            id: v.id,
-            sku: v.sku,
-            priceCents: v.priceCents,
-            compareAtPriceCents: v.compareAtPriceCents,
-            weightGrams: v.weightGrams,
-            packageHeightCm: v.packageHeightCm,
-            packageWidthCm: v.packageWidthCm,
-            packageDepthCm: v.packageDepthCm,
-            active: v.active,
-            selectedOptionValueIds: v.optionValues.map((ov) => ov.optionValueId),
-          })),
-        }));
-      }
+        })),
+        variants: p.variants.map((v) => ({
+          id: v.id,
+          sku: v.sku,
+          priceCents: v.priceCents,
+          compareAtPriceCents: v.compareAtPriceCents,
+          weightGrams: v.weightGrams,
+          packageHeightCm: v.packageHeightCm,
+          packageWidthCm: v.packageWidthCm,
+          packageDepthCm: v.packageDepthCm,
+          active: v.active,
+          selectedOptionValueIds: v.optionValues.map((ov) => ov.optionValueId),
+        })),
+      }));
+      loadedFromDb = true;
     }
   } catch (err) {
     assertDevFallbackAllowed(err);
+  }
+
+  if (!loadedFromDb) {
+    products = [...SEED_PRODUCTS];
   }
 
   // 1. Filtro por Categoria
@@ -317,6 +320,9 @@ export async function getProductBySlug(
           })),
         };
       }
+      if (!isTestEnvironment()) {
+        return null;
+      }
     }
   } catch (err) {
     assertDevFallbackAllowed(err);
@@ -335,20 +341,199 @@ export async function getProductBySlug(
 }
 
 /**
+ * Retorna um produto detalhado pelo ID ou Slug (para admin ou rotas diretas).
+ */
+export async function getProductById(
+  idOrSlug: string,
+  includeInactive = true
+): Promise<SeedProduct | null> {
+  const normalized = idOrSlug.trim();
+
+  try {
+    if (isDatabaseConfigured()) {
+      const p = await db.product.findFirst({
+        where: {
+          OR: [{ id: normalized }, { slug: normalized.toLowerCase() }],
+          ...(includeInactive ? { status: { not: "ARCHIVED" } } : { status: "ACTIVE" }),
+        },
+        include: {
+          category: true,
+          collections: { include: { collection: true } },
+          images: { orderBy: { displayOrder: "asc" } },
+          options: {
+            orderBy: { displayOrder: "asc" },
+            include: { values: { orderBy: { displayOrder: "asc" } } },
+          },
+          variants: {
+            ...(includeInactive ? {} : { where: { active: true } }),
+            include: { optionValues: true },
+          },
+        },
+      });
+
+      if (p) {
+        return {
+          id: p.id,
+          name: p.name,
+          slug: p.slug,
+          description: p.description,
+          categorySlug: p.category.slug,
+          collectionSlugs: p.collections.map((c) => c.collection.slug),
+          material: p.material as "PLA" | "PETG",
+          isSustainable: p.isSustainable,
+          productionDays: p.productionDays,
+          dimensions: p.dimensions || "",
+          weightGrams: p.weightGrams || 350,
+          socketType: p.socketType || undefined,
+          maxWattage: p.maxWattage || undefined,
+          bulbIncluded: p.bulbIncluded,
+          cordLengthCm: p.cordLengthCm || undefined,
+          waterproof: p.waterproof,
+          tags: [],
+          images: p.images.map((img) => ({
+            id: img.id,
+            url: img.url,
+            alt: img.alt,
+            displayOrder: img.displayOrder,
+            isPrimary: img.isPrimary,
+            isHover: img.isHover,
+          })),
+          options: p.options.map((opt) => ({
+            id: opt.id,
+            name: opt.name,
+            values: opt.values.map((val) => ({
+              id: val.id,
+              name: val.name,
+              colorHex: val.colorHex || undefined,
+            })),
+          })),
+          variants: p.variants.map((v) => ({
+            id: v.id,
+            sku: v.sku,
+            priceCents: v.priceCents,
+            compareAtPriceCents: v.compareAtPriceCents,
+            weightGrams: v.weightGrams,
+            packageHeightCm: v.packageHeightCm,
+            packageWidthCm: v.packageWidthCm,
+            packageDepthCm: v.packageDepthCm,
+            active: v.active,
+            selectedOptionValueIds: v.optionValues.map((ov) => ov.optionValueId),
+          })),
+        };
+      }
+      if (!isTestEnvironment()) {
+        return null;
+      }
+    }
+  } catch (err) {
+    assertDevFallbackAllowed(err);
+  }
+
+  const found = SEED_PRODUCTS.find(
+    (p) => p.id === normalized || p.slug === normalized.toLowerCase()
+  );
+  return found || null;
+}
+
+/**
  * Retorna produtos relacionados (mesma categoria ou em coleções similares).
  */
 export async function getRelatedProducts(
   productId: string,
   limit = 4
 ): Promise<SeedProduct[]> {
-  const current = SEED_PRODUCTS.find((p) => p.id === productId);
-  if (!current) return SEED_PRODUCTS.slice(0, limit);
+  try {
+    if (isDatabaseConfigured()) {
+      const current = await db.product.findUnique({
+        where: { id: productId },
+        select: { categoryId: true },
+      });
+      if (current) {
+        const related = await db.product.findMany({
+          where: {
+            id: { not: productId },
+            status: "ACTIVE",
+            categoryId: current.categoryId,
+          },
+          take: limit,
+          include: {
+            category: true,
+            collections: { include: { collection: true } },
+            images: { orderBy: { displayOrder: "asc" } },
+            options: {
+              orderBy: { displayOrder: "asc" },
+              include: { values: { orderBy: { displayOrder: "asc" } } },
+            },
+            variants: {
+              where: { active: true },
+              include: { optionValues: true },
+            },
+          },
+        });
+
+        if (related.length > 0) {
+          return related.map((p) => ({
+            id: p.id,
+            name: p.name,
+            slug: p.slug,
+            description: p.description,
+            categorySlug: p.category.slug,
+            collectionSlugs: p.collections.map((c) => c.collection.slug),
+            material: p.material as "PLA" | "PETG",
+            isSustainable: p.isSustainable,
+            productionDays: p.productionDays,
+            dimensions: p.dimensions || "",
+            weightGrams: p.weightGrams || 350,
+            socketType: p.socketType || undefined,
+            maxWattage: p.maxWattage || undefined,
+            bulbIncluded: p.bulbIncluded,
+            cordLengthCm: p.cordLengthCm || undefined,
+            waterproof: p.waterproof,
+            tags: [],
+            images: p.images.map((img) => ({
+              id: img.id,
+              url: img.url,
+              alt: img.alt,
+              displayOrder: img.displayOrder,
+              isPrimary: img.isPrimary,
+              isHover: img.isHover,
+            })),
+            options: p.options.map((opt) => ({
+              id: opt.id,
+              name: opt.name,
+              values: opt.values.map((val) => ({
+                id: val.id,
+                name: val.name,
+                colorHex: val.colorHex || undefined,
+              })),
+            })),
+            variants: p.variants.map((v) => ({
+              id: v.id,
+              sku: v.sku,
+              priceCents: v.priceCents,
+              compareAtPriceCents: v.compareAtPriceCents,
+              weightGrams: v.weightGrams,
+              packageHeightCm: v.packageHeightCm,
+              packageWidthCm: v.packageWidthCm,
+              packageDepthCm: v.packageDepthCm,
+              active: v.active,
+              selectedOptionValueIds: v.optionValues.map((ov) => ov.optionValueId),
+            })),
+          }));
+        }
+      }
+    }
+  } catch (err) {
+    assertDevFallbackAllowed(err);
+  }
+
+  const currentSeed = SEED_PRODUCTS.find((p) => p.id === productId);
+  if (!currentSeed) return SEED_PRODUCTS.slice(0, limit);
 
   return SEED_PRODUCTS.filter((p) => p.id !== productId)
     .sort((a, b) => {
-       // Prioriza mesma categoria
-       const aScore = a.categorySlug === current.categorySlug ? 2 : 0;
-       const bScore = b.categorySlug === current.categorySlug ? 2 : 0;
+       const aScore = a.categorySlug === currentSeed.categorySlug ? 2 : 0;
+       const bScore = b.categorySlug === currentSeed.categorySlug ? 2 : 0;
        return bScore - aScore;
      })
      .slice(0, limit);

@@ -15,6 +15,7 @@ import {
 } from "@/lib/data/catalog-seed";
 import { db } from "@/lib/db";
 import { deleteBlobsSafely } from "@/lib/blob-storage";
+import { getProductById } from "@/lib/catalog";
 
 /**
  * Server Action de Login Administrativo.
@@ -113,9 +114,17 @@ export async function saveProductAction(payload: SaveProductPayload) {
   const productId = payload.id || `prod_${Date.now()}`;
   const cleanSlug = payload.slug.trim().toLowerCase();
   const isTableLamp = payload.categorySlug === "luminarias-de-mesa";
-  const existingProduct = payload.id
+  let existingProduct = payload.id
     ? SEED_PRODUCTS.find((p) => p.id === payload.id || p.slug === payload.slug)
     : SEED_PRODUCTS.find((p) => p.slug === payload.slug);
+
+  if (!existingProduct && isDatabaseConfigured()) {
+    try {
+      existingProduct = (await getProductById(payload.id || payload.slug)) || undefined;
+    } catch {
+      // ignore
+    }
+  }
 
   let finalOptions: SeedOption[] = [];
   let finalVariants: SeedVariant[] = [];
@@ -389,49 +398,85 @@ export async function saveProductAction(payload: SaveProductPayload) {
   };
 
   // Tenta persistir no Prisma se houver conexão configurada
+  let savedProductId = productId;
   try {
     if (isDatabaseConfigured()) {
-      const category = await db.category.findUnique({
+      let category = await db.category.findUnique({
         where: { slug: payload.categorySlug },
       });
+      if (!category) {
+        category = await db.category.findFirst();
+      }
       if (category) {
         await db.$transaction(async (tx) => {
-          // 1. Upsert do Produto base
-          const productRecord = await tx.product.upsert({
-            where: { slug: payload.slug },
-            update: {
-              name: payload.name,
-              description: payload.description,
-              material: payload.material,
-              isSustainable: payload.isSustainable,
-              productionDays: payload.productionDays,
-              dimensions: payload.dimensions,
-              weightGrams: payload.weightGrams,
-              socketType: payload.socketType,
-              maxWattage: payload.maxWattage,
-              bulbIncluded: payload.bulbIncluded,
-              cordLengthCm: payload.cordLengthCm,
-              waterproof: payload.waterproof,
-              categoryId: category.id,
-            },
-            create: {
-              id: productId,
-              name: payload.name,
-              slug: payload.slug,
-              description: payload.description,
-              material: payload.material,
-              isSustainable: payload.isSustainable,
-              productionDays: payload.productionDays,
-              dimensions: payload.dimensions,
-              weightGrams: payload.weightGrams,
-              socketType: payload.socketType,
-              maxWattage: payload.maxWattage,
-              bulbIncluded: payload.bulbIncluded,
-              cordLengthCm: payload.cordLengthCm,
-              waterproof: payload.waterproof,
-              categoryId: category.id,
-            },
-          });
+          // 1. Atualizar por ID se já existir, ou upsert por slug
+          let productRecord;
+          if (payload.id) {
+            const existingById = await tx.product.findUnique({
+              where: { id: payload.id },
+            });
+            if (existingById) {
+              productRecord = await tx.product.update({
+                where: { id: payload.id },
+                data: {
+                  name: payload.name,
+                  slug: payload.slug,
+                  description: payload.description,
+                  material: payload.material,
+                  isSustainable: payload.isSustainable,
+                  productionDays: payload.productionDays,
+                  dimensions: payload.dimensions,
+                  weightGrams: payload.weightGrams,
+                  socketType: payload.socketType,
+                  maxWattage: payload.maxWattage,
+                  bulbIncluded: payload.bulbIncluded,
+                  cordLengthCm: payload.cordLengthCm,
+                  waterproof: payload.waterproof,
+                  categoryId: category.id,
+                },
+              });
+            }
+          }
+
+          if (!productRecord) {
+            productRecord = await tx.product.upsert({
+              where: { slug: payload.slug },
+              update: {
+                name: payload.name,
+                description: payload.description,
+                material: payload.material,
+                isSustainable: payload.isSustainable,
+                productionDays: payload.productionDays,
+                dimensions: payload.dimensions,
+                weightGrams: payload.weightGrams,
+                socketType: payload.socketType,
+                maxWattage: payload.maxWattage,
+                bulbIncluded: payload.bulbIncluded,
+                cordLengthCm: payload.cordLengthCm,
+                waterproof: payload.waterproof,
+                categoryId: category.id,
+              },
+              create: {
+                id: productId,
+                name: payload.name,
+                slug: payload.slug,
+                description: payload.description,
+                material: payload.material,
+                isSustainable: payload.isSustainable,
+                productionDays: payload.productionDays,
+                dimensions: payload.dimensions,
+                weightGrams: payload.weightGrams,
+                socketType: payload.socketType,
+                maxWattage: payload.maxWattage,
+                bulbIncluded: payload.bulbIncluded,
+                cordLengthCm: payload.cordLengthCm,
+                waterproof: payload.waterproof,
+                categoryId: category.id,
+              },
+            });
+          }
+
+          savedProductId = productRecord.id;
 
           // 2. Limpar opções e variantes antigas se produto já existia
           const existingVariants = await tx.productVariant.findMany({
@@ -489,6 +534,8 @@ export async function saveProductAction(payload: SaveProductPayload) {
           }
 
           // 4. Criar ProductVariants e associar em ProductVariantOptionValue
+          const variantOptionValuesData: Array<{ variantId: string; optionValueId: string }> = [];
+
           for (const variant of finalVariants) {
             const createdVar = await tx.productVariant.create({
               data: {
@@ -507,14 +554,18 @@ export async function saveProductAction(payload: SaveProductPayload) {
             for (const seedValId of variant.selectedOptionValueIds) {
               const prismaValId = valueIdMap.get(seedValId);
               if (prismaValId) {
-                await tx.productVariantOptionValue.create({
-                  data: {
-                    variantId: createdVar.id,
-                    optionValueId: prismaValId,
-                  },
+                variantOptionValuesData.push({
+                  variantId: createdVar.id,
+                  optionValueId: prismaValId,
                 });
               }
             }
+          }
+
+          if (variantOptionValuesData.length > 0) {
+            await tx.productVariantOptionValue.createMany({
+              data: variantOptionValuesData,
+            });
           }
 
           // 5. Persistir ProductImage no mesmo fluxo transacional
@@ -522,19 +573,21 @@ export async function saveProductAction(payload: SaveProductPayload) {
             where: { productId: productRecord.id },
           });
 
-          for (let i = 0; i < finalImages.length; i++) {
-            const img = finalImages[i];
-            await tx.productImage.create({
-              data: {
+          if (finalImages.length > 0) {
+            await tx.productImage.createMany({
+              data: finalImages.map((img, i) => ({
                 productId: productRecord.id,
                 url: img.url,
                 alt: img.alt || `${payload.name} foto ${i + 1}`,
                 displayOrder: img.displayOrder !== undefined ? img.displayOrder : i,
                 isPrimary: img.isPrimary,
                 isHover: img.isHover,
-              },
+              })),
             });
           }
+        }, {
+          maxWait: 15000,
+          timeout: 30000,
         });
       }
     }
@@ -543,9 +596,11 @@ export async function saveProductAction(payload: SaveProductPayload) {
     // Mantém no repositório em memória (somente em desenvolvimento)
   }
 
+  newProduct.id = savedProductId;
+
   // Atualiza ou insere no repositório de dados em memória
   const existingIndex = SEED_PRODUCTS.findIndex(
-    (p) => p.id === productId || p.slug === payload.slug
+    (p) => p.id === savedProductId || p.slug === payload.slug
   );
   if (existingIndex >= 0) {
     SEED_PRODUCTS[existingIndex] = newProduct;
@@ -585,7 +640,17 @@ export async function saveProductAction(payload: SaveProductPayload) {
 export async function duplicateProductAction(productId: string) {
   await requireAdmin();
 
-  const original = SEED_PRODUCTS.find((p) => p.id === productId);
+  let original: SeedProduct | null = null;
+  if (isDatabaseConfigured()) {
+    try {
+      original = await getProductById(productId);
+    } catch {
+      // ignore
+    }
+  }
+  if (!original) {
+    original = SEED_PRODUCTS.find((p) => p.id === productId || p.slug === productId) || null;
+  }
   if (!original) {
     return { success: false, error: "Produto não encontrado." };
   }
@@ -601,9 +666,43 @@ export async function duplicateProductAction(productId: string) {
     variants: original.variants.map((v, i) => ({
       ...v,
       id: `var_${duplicatedId}_${i}`,
-      sku: `${v.sku}-CPY`,
+      sku: `${v.sku}-CPY-${Date.now().toString().slice(-4)}`,
     })),
   };
+
+  if (isDatabaseConfigured()) {
+    try {
+      const defaultVariant = duplicatedProduct.variants[0];
+      await saveProductAction({
+        id: duplicatedId,
+        name: duplicatedProduct.name,
+        slug: duplicatedProduct.slug,
+        description: duplicatedProduct.description,
+        categorySlug: duplicatedProduct.categorySlug,
+        collectionSlugs: duplicatedProduct.collectionSlugs,
+        material: duplicatedProduct.material,
+        isSustainable: duplicatedProduct.isSustainable,
+        productionDays: duplicatedProduct.productionDays,
+        dimensions: duplicatedProduct.dimensions,
+        weightGrams: duplicatedProduct.weightGrams,
+        socketType: duplicatedProduct.socketType,
+        maxWattage: duplicatedProduct.maxWattage,
+        bulbIncluded: duplicatedProduct.bulbIncluded,
+        cordLengthCm: duplicatedProduct.cordLengthCm,
+        waterproof: duplicatedProduct.waterproof,
+        priceCents: defaultVariant?.priceCents || 10000,
+        compareAtPriceCents: defaultVariant?.compareAtPriceCents,
+        packageHeightCm: defaultVariant?.packageHeightCm || 20,
+        packageWidthCm: defaultVariant?.packageWidthCm || 20,
+        packageDepthCm: defaultVariant?.packageDepthCm || 20,
+        images: duplicatedProduct.images,
+        options: duplicatedProduct.options,
+        variants: duplicatedProduct.variants,
+      });
+    } catch (err) {
+      assertDevFallbackAllowed(err);
+    }
+  }
 
   SEED_PRODUCTS.unshift(duplicatedProduct);
 
@@ -619,29 +718,108 @@ export async function duplicateProductAction(productId: string) {
 export async function deleteProductAction(productId: string) {
   await requireAdmin();
 
+  let deletedSlug: string | undefined;
+
   try {
     if (isDatabaseConfigured()) {
       const existing = await db.product.findFirst({
         where: { OR: [{ id: productId }, { slug: productId }] },
+        include: {
+          orderItems: { select: { id: true } },
+          images: { select: { url: true } },
+        },
       });
+
       if (existing) {
-        await db.product.delete({
-          where: { id: existing.id },
-        });
+        deletedSlug = existing.slug;
+
+        if (existing.orderItems && existing.orderItems.length > 0) {
+          // Se o produto possui pedidos vinculados, arquiva para preservar integridade contábil
+          await db.product.update({
+            where: { id: existing.id },
+            data: { status: "ARCHIVED" },
+          });
+        } else {
+          // Exclusão física definitiva em transação
+          await db.$transaction(async (tx) => {
+            await tx.productCollection.deleteMany({
+              where: { productId: existing.id },
+            });
+
+            await tx.productImage.deleteMany({
+              where: { productId: existing.id },
+            });
+
+            const variants = await tx.productVariant.findMany({
+              where: { productId: existing.id },
+              select: { id: true },
+            });
+            const variantIds = variants.map((v) => v.id);
+            if (variantIds.length > 0) {
+              await tx.productVariantOptionValue.deleteMany({
+                where: { variantId: { in: variantIds } },
+              });
+              await tx.productVariant.deleteMany({
+                where: { id: { in: variantIds } },
+              });
+            }
+
+            const options = await tx.productOption.findMany({
+              where: { productId: existing.id },
+              select: { id: true },
+            });
+            const optionIds = options.map((o) => o.id);
+            if (optionIds.length > 0) {
+              await tx.productOptionValue.deleteMany({
+                where: { optionId: { in: optionIds } },
+              });
+              await tx.productOption.deleteMany({
+                where: { id: { in: optionIds } },
+              });
+            }
+
+            await tx.product.delete({
+              where: { id: existing.id },
+            });
+          });
+
+          // Limpa blobs associados no Vercel Blob com segurança se aplicável
+          if (existing.images && existing.images.length > 0) {
+            const urlsToDelete = existing.images
+              .map((img) => img.url)
+              .filter((url) => url.startsWith("http"));
+            if (urlsToDelete.length > 0) {
+              deleteBlobsSafely(urlsToDelete).catch((err) => {
+                console.error("[deleteProductAction] Erro na limpeza de blobs:", err);
+              });
+            }
+          }
+        }
       }
     }
   } catch (err) {
     assertDevFallbackAllowed(err);
+    console.error("[deleteProductAction] Erro ao excluir produto:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Erro ao excluir produto no banco de dados.",
+    };
   }
 
+  // Atualiza também repositório em memória caso exista
   const index = SEED_PRODUCTS.findIndex((p) => p.id === productId || p.slug === productId);
   if (index >= 0) {
+    if (!deletedSlug) deletedSlug = SEED_PRODUCTS[index].slug;
     SEED_PRODUCTS.splice(index, 1);
   }
 
   revalidatePath("/produtos");
   revalidatePath("/admin/produtos");
+  revalidatePath("/admin");
   revalidatePath("/");
+  if (deletedSlug) {
+    revalidatePath(`/produtos/${deletedSlug}`);
+  }
 
   return { success: true };
 }
@@ -743,17 +921,27 @@ export async function toggleVariantActiveAction(
   active: boolean
 ) {
   await requireAdmin();
-  const product = SEED_PRODUCTS.find((p) => p.id === productId);
-  if (!product) {
-    return { success: false, error: "Produto não encontrado." };
-  }
-  const variant = product.variants.find((v) => v.id === variantId);
-  if (!variant) {
-    return { success: false, error: "Variante não encontrada." };
-  }
-  variant.active = active;
 
-  revalidatePath(`/produtos/${product.slug}`);
+  try {
+    if (isDatabaseConfigured()) {
+      await db.productVariant.updateMany({
+        where: { id: variantId },
+        data: { active },
+      });
+    }
+  } catch (err) {
+    assertDevFallbackAllowed(err);
+  }
+
+  const product = SEED_PRODUCTS.find((p) => p.id === productId);
+  if (product) {
+    const variant = product.variants.find((v) => v.id === variantId);
+    if (variant) {
+      variant.active = active;
+    }
+    revalidatePath(`/produtos/${product.slug}`);
+  }
+
   revalidatePath(`/admin/produtos/${productId}`);
   revalidatePath("/admin/produtos");
   return { success: true, active };

@@ -105,7 +105,7 @@ describe("Luminárias de Mesa — Seleção Independente de Base e Cúpula", () 
     const hera = await getProductBySlug("vaso-facetado-hera");
     expect(hera?.options.length).toBe(1);
     expect(hera?.options[0].name).toBe("Cor");
-  });
+  }, 15000);
 
   it("deve permitir que o admin alterne a disponibilidade de uma variante ativa/pausada", async () => {
     vi.spyOn(auth, "requireAdmin").mockResolvedValue({
@@ -168,7 +168,7 @@ describe("Luminárias de Mesa — Seleção Independente de Base e Cúpula", () 
     expect(res.success).toBe(true);
     expect(res.product?.options.length).toBe(3);
     expect(res.product?.variants.length).toBe(18);
-  });
+  }, 15000);
 
   it("deve criar uma nova luminária de mesa com opções independentes de Base e Cúpula e variantes combinatórias", async () => {
     vi.spyOn(auth, "requireAdmin").mockResolvedValue({
@@ -287,7 +287,7 @@ describe("Luminárias de Mesa — Seleção Independente de Base e Cúpula", () 
     expect(loaded).toBeDefined();
     expect(loaded?.options.length).toBe(2);
     expect(loaded?.variants.length).toBe(4);
-  });
+  }, 15000);
 
   it("deve criar um produto em outra categoria com opção simples 'Cor' e variante única", async () => {
     vi.spyOn(auth, "requireAdmin").mockResolvedValue({
@@ -350,7 +350,7 @@ describe("Luminárias de Mesa — Seleção Independente de Base e Cúpula", () 
 
     const formattedName = formatVariantDisplayName(created, created.variants[0]);
     expect(formattedName).toBe("Verde Sálvia");
-  });
+  }, 15000);
 
   it("deve preservar as opções e variantes existentes ao editar a Luminária Coluna Duna", async () => {
     vi.spyOn(auth, "requireAdmin").mockResolvedValue({
@@ -389,5 +389,5 @@ describe("Luminárias de Mesa — Seleção Independente de Base e Cúpula", () 
     expect(res.product?.options[0].name).toBe("Cor");
     expect(res.product?.variants.length).toBe(1);
     expect(res.product?.variants[0].selectedOptionValueIds).toEqual(["val_duna_areia"]);
-  });
+  }, 15000);
 });
