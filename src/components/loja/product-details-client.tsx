@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useStoreSettings } from "@/lib/store-settings-context";
+
 import { WHATSAPP_NUMBER } from "@/lib/site-config";
 
 import { useState, useTransition } from "react";
@@ -31,6 +32,8 @@ interface ProductDetailsClientProps {
 }
 
 export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
+  const storeSettings = useStoreSettings();
+  const activeWhatsapp = storeSettings.whatsappNumber || WHATSAPP_NUMBER;
   const { addItem } = useCart();
   const { isFavorite, toggleFavorite } = useWishlist();
   const isFavorited = isFavorite(product.slug);
@@ -44,17 +47,12 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [addedSuccess, setAddedSuccess] = useState(false);
 
-  const storeSettings = useStoreSettings();
-  const activeWhatsapp = storeSettings.whatsappNumber || WHATSAPP_NUMBER;
-
   const pricing = getProductPricing({
     priceCents: selectedVariant.priceCents,
     compareAtPriceCents: selectedVariant.compareAtPriceCents,
-    pixDiscountPercent: storeSettings.pixDiscountPercent,
-    maxInstallments: storeSettings.maxInstallmentsFree,
   });
 
-  const whatsappMessage = `OlÃ¡! Gostaria de tirar uma dÃºvida sobre o produto *${product.name}* (SKU: ${selectedVariant.sku}).`;
+  const whatsappMessage = `Olá! Gostaria de tirar uma dúvida sobre o produto *${product.name}* (SKU: ${selectedVariant.sku}).`;
 
   function handleAddToCart() {
     setIsAdding(true);
@@ -68,7 +66,7 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
     e.preventDefault();
     const cleanCep = cep.replace(/\D/g, "");
     if (cleanCep.length !== 8) {
-      setShippingError("Digite um CEP vÃ¡lido com 8 nÃºmeros.");
+      setShippingError("Digite um CEP válido com 8 números.");
       return;
     }
 
@@ -88,21 +86,21 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
       if (res.success && res.quotes) {
         setShippingQuotes(res.quotes);
       } else {
-        setShippingError(res.error || "NÃ£o foi possÃ­vel cotar o frete para este CEP.");
+        setShippingError(res.error || "Não foi possível cotar o frete para este CEP.");
       }
     });
   }
 
   return (
     <div className="space-y-12">
-      {/* Grade Principal: Galeria (60%) e InformaÃ§Ãµes (40%) */}
+      {/* Grade Principal: Galeria (60%) e Informações (40%) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start pb-20 lg:pb-0">
         {/* Lado Esquerdo: Galeria de Fotos */}
         <div className="lg:col-span-7">
           <ProductGallery images={product.images} productName={product.name} />
         </div>
 
-        {/* Lado Direito: InformaÃ§Ãµes e Compra */}
+        {/* Lado Direito: Informações e Compra */}
         <div className="lg:col-span-5 space-y-5 lg:sticky lg:top-24">
           {/* Categoria e Selos */}
           <div className="flex flex-wrap items-center gap-2">
@@ -119,17 +117,17 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
             )}
             {product.isSustainable && (
               <span className="px-2.5 py-0.5 rounded-full bg-verde text-white text-[11px] font-bold uppercase tracking-wider">
-                PLA SustentÃ¡vel
+                PLA Sustentável
               </span>
             )}
           </div>
 
-          {/* TÃ­tulo do Produto */}
+          {/* Título do Produto */}
           <h1 className="text-2xl sm:text-3xl font-bold text-ink font-display leading-tight">
             {product.name}
           </h1>
 
-          {/* Bloco de PreÃ§os em Destaque */}
+          {/* Bloco de Preços em Destaque */}
           <div className="p-4 sm:p-5 rounded-xl bg-surface-alt/70 border border-border space-y-2.5">
             {pricing.hasDiscount && (
               <span className="text-sm text-text-muted line-through block">
@@ -142,7 +140,7 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
                 {pricing.formatted.pixPrice}
               </span>
               <span className="text-xs sm:text-sm font-bold text-verde bg-verde/10 px-2.5 py-1 rounded-full">
-                Pix Â· 5% OFF
+                Pix · 5% OFF
               </span>
             </div>
 
@@ -153,14 +151,14 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
             </div>
           </div>
 
-          {/* Seletor de VariaÃ§Ãµes */}
+          {/* Seletor de Variações */}
           <VariantSelector
             product={product}
             selectedVariant={selectedVariant}
             onVariantChange={setSelectedVariant}
           />
 
-          {/* BotÃµes de AÃ§Ã£o */}
+          {/* Botões de Ação */}
           <div className="space-y-3 pt-1">
             <div className="flex items-center gap-3">
               <Button
@@ -201,7 +199,7 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
               </button>
             </div>
 
-            {/* DÃºvidas no WhatsApp */}
+            {/* Dúvidas no WhatsApp */}
             <a
               href={`https://wa.me/${activeWhatsapp}?text=${encodeURIComponent(
                 whatsappMessage
@@ -216,12 +214,12 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
                 className="w-full gap-2 border-verde/30 text-verde hover:bg-verde/5"
               >
                 <MessageCircle className="w-4 h-4 fill-verde stroke-none" />
-                <span>DÃºvidas? Fale conosco no WhatsApp</span>
+                <span>Dúvidas? Fale conosco no WhatsApp</span>
               </Button>
             </a>
           </div>
 
-          {/* SimulaÃ§Ã£o de Frete e Prazo de ProduÃ§Ã£o */}
+          {/* Simulação de Frete e Prazo de Produção */}
           <div className="p-4 rounded-card border border-border bg-surface space-y-3">
             <div className="flex items-center gap-2 text-xs font-semibold text-text uppercase tracking-wider font-mono">
               <Truck className="w-4 h-4 text-text-muted" />
@@ -274,14 +272,14 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
                         <span>{quote.name}</span>
                         {quote.isFree && (
                           <span className="text-[10px] font-bold text-verde bg-verde/10 px-1.5 py-0.2 rounded-full uppercase">
-                            Frete GrÃ¡tis
+                            Frete Grátis
                           </span>
                         )}
                       </div>
                       <span className="text-text-muted text-[11px] block mt-0.5">
-                        ProduÃ§Ã£o ({quote.productionDays}d) + Entrega ({quote.carrierDays}d) ={" "}
+                        Produção ({quote.productionDays}d) + Entrega ({quote.carrierDays}d) ={" "}
                         <strong className="text-text font-bold">
-                          {quote.totalDays} dias Ãºteis
+                          {quote.totalDays} dias úteis
                         </strong>
                       </span>
                     </div>
@@ -292,20 +290,20 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
                 ))}
                 <p className="text-[11px] text-verde font-semibold flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Frete grÃ¡tis disponÃ­vel para compras a partir de R$ 200,00!</span>
+                  <span>Frete grátis disponível para compras a partir de R$ 200,00!</span>
                 </p>
               </div>
             ) : (
               <div className="flex items-center gap-2 text-xs text-text-muted">
                 <Clock className="w-3.5 h-3.5 text-amarelo shrink-0" />
                 <span>
-                  Produzido sob encomenda em atÃ© <strong>3 dias Ãºteis</strong>.
+                  Produzido sob encomenda em até <strong>3 dias úteis</strong>.
                 </span>
               </div>
             )}
           </div>
 
-          {/* Garantias rÃ¡pidas */}
+          {/* Garantias rápidas */}
           <div className="grid grid-cols-2 gap-3 pt-2 text-xs text-text-muted">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-verde" />
@@ -313,32 +311,32 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
             </div>
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-magenta" />
-              <span>ImpressÃ£o 3D de alta precisÃ£o</span>
+              <span>Impressão 3D de alta precisão</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* SeÃ§Ã£o Inferior: Abas de DescriÃ§Ã£o, Ficha TÃ©cnica e Cuidados */}
+      {/* Seção Inferior: Abas de Descrição, Ficha Técnica e Cuidados */}
       <div className="bg-surface rounded-card border border-border p-6 sm:p-8 lg:p-10 space-y-8">
-        {/* DescriÃ§Ã£o Detalhada */}
+        {/* Descrição Detalhada */}
         <div>
           <h2 className="text-xl font-bold text-ink font-display mb-3">
-            Sobre a PeÃ§a
+            Sobre a Peça
           </h2>
           <p className="text-text leading-relaxed max-w-4xl text-base">
             {product.description}
           </p>
         </div>
 
-        {/* Ficha TÃ©cnica Estruturada */}
+        {/* Ficha Técnica Estruturada */}
         <div className="pt-6 border-t border-border">
           <h2 className="text-xl font-bold text-ink font-display mb-4">
-            Ficha TÃ©cnica
+            Ficha Técnica
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             <div className="p-3.5 rounded-lg bg-surface-alt/70">
-              <span className="text-xs text-text-muted block">DimensÃµes (A Ã— L Ã— P)</span>
+              <span className="text-xs text-text-muted block">Dimensões (A × L × P)</span>
               <strong className="text-text">{product.dimensions}</strong>
             </div>
 
@@ -346,13 +344,13 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
               <span className="text-xs text-text-muted block">Material</span>
               <strong className="text-text">
                 {product.material === "PLA"
-                  ? "PLA BotÃ¢nico BiodegradÃ¡vel"
-                  : "PETG de Alta ResistÃªncia"}
+                  ? "PLA Botânico Biodegradável"
+                  : "PETG de Alta Resistência"}
               </strong>
             </div>
 
             <div className="p-3.5 rounded-lg bg-surface-alt/70">
-              <span className="text-xs text-text-muted block">Peso da PeÃ§a</span>
+              <span className="text-xs text-text-muted block">Peso da Peça</span>
               <strong className="text-text">{product.weightGrams}g</strong>
             </div>
 
@@ -365,8 +363,8 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
 
             {product.maxWattage && (
               <div className="p-3.5 rounded-lg bg-surface-alt/70">
-                <span className="text-xs text-text-muted block">PotÃªncia Recomendada</span>
-                <strong className="text-text">AtÃ© {product.maxWattage}W LED</strong>
+                <span className="text-xs text-text-muted block">Potência Recomendada</span>
+                <strong className="text-text">Até {product.maxWattage}W LED</strong>
               </div>
             )}
 
@@ -379,38 +377,38 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
 
             {product.waterproof !== undefined && (
               <div className="p-3.5 rounded-lg bg-surface-alt/70">
-                <span className="text-xs text-text-muted block">VedaÃ§Ã£o para Ãgua</span>
+                <span className="text-xs text-text-muted block">Vedação para Água</span>
                 <strong className="text-text">
-                  {product.waterproof ? "Vedado / ReservatÃ³rio interno" : "Uso para plantas secas"}
+                  {product.waterproof ? "Vedado / Reservatório interno" : "Uso para plantas secas"}
                 </strong>
               </div>
             )}
 
             <div className="p-3.5 rounded-lg bg-surface-alt/70">
-              <span className="text-xs text-text-muted block">Prazo de ProduÃ§Ã£o</span>
-              <strong className="text-text">{product.productionDays} dias Ãºteis</strong>
+              <span className="text-xs text-text-muted block">Prazo de Produção</span>
+              <strong className="text-text">{product.productionDays} dias úteis</strong>
             </div>
           </div>
         </div>
 
-        {/* Cuidados e PreservaÃ§Ã£o */}
+        {/* Cuidados e Preservação */}
         <div className="pt-6 border-t border-border">
           <h2 className="text-xl font-bold text-ink font-display mb-3">
-            Cuidados com sua PeÃ§a 3D
+            Cuidados com sua Peça 3D
           </h2>
           <ul className="list-disc list-inside text-sm text-text-muted space-y-1.5 leading-relaxed">
-            <li>Limpar apenas com pano macio levemente umedecido em Ã¡gua.</li>
-            <li>NÃ£o utilizar produtos quÃ­micos abrasivos ou solventes (Ã¡lcool, acetona).</li>
-            <li>Evitar exposiÃ§Ã£o solar direta prolongada ou temperaturas acima de 55Â°C.</li>
-            <li>Para luminÃ¡rias, utilizar exclusivamente lÃ¢mpadas LED (nÃ£o usar lÃ¢mpadas incandescentes que geram calor excessivo).</li>
+            <li>Limpar apenas com pano macio levemente umedecido em água.</li>
+            <li>Não utilizar produtos químicos abrasivos ou solventes (álcool, acetona).</li>
+            <li>Evitar exposição solar direta prolongada ou temperaturas acima de 55°C.</li>
+            <li>Para luminárias, utilizar exclusivamente lâmpadas LED (não usar lâmpadas incandescentes que geram calor excessivo).</li>
           </ul>
         </div>
       </div>
 
-      {/* BotÃ£o Fixo no Mobile para Compra RÃ¡pida (conforme design.md) */}
+      {/* Botão Fixo no Mobile para Compra Rápida (conforme design.md) */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-between gap-3 border-t border-border bg-surface/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl backdrop-blur-md">
         <div>
-          <span className="text-xs text-text-muted block leading-none">PreÃ§o Ã  vista</span>
+          <span className="text-xs text-text-muted block leading-none">Preço à vista</span>
           <span className="text-lg font-bold text-ink font-display">
             {pricing.formatted.pixPrice}
           </span>

@@ -1,4 +1,5 @@
-﻿"use client";
+"use client";
+
 import { useStoreSettings } from "@/lib/store-settings-context";
 
 import { WHATSAPP_NUMBER } from "@/lib/site-config";
@@ -33,9 +34,9 @@ interface TrackingViewProps {
 const TRACKING_STEPS = [
   { key: "CRIADO", label: "Pedido Recebido", icon: Clock },
   { key: "PAGO", label: "Pagamento Aprovado", icon: CheckCircle2 },
-  { key: "EM_PRODUCAO", label: "Em ProduÃ§Ã£o 3D", icon: Printer },
+  { key: "EM_PRODUCAO", label: "Em Produção 3D", icon: Printer },
   { key: "PRONTO_PARA_ENVIO", label: "Pronto p/ Envio", icon: Package },
-  { key: "ENVIADO", label: "Em TrÃ¢nsito", icon: Truck },
+  { key: "ENVIADO", label: "Em Trânsito", icon: Truck },
   { key: "ENTREGUE", label: "Entregue", icon: CheckCircle2 },
 ];
 
@@ -78,7 +79,7 @@ export function TrackingView({ initialCode = "" }: TrackingViewProps) {
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     if (!orderNumber.trim() || !verificationKey.trim()) {
-      setError("Preencha o nÃºmero do pedido e o e-mail ou CPF da compra.");
+      setError("Preencha o número do pedido e o e-mail ou CPF da compra.");
       return;
     }
 
@@ -91,7 +92,7 @@ export function TrackingView({ initialCode = "" }: TrackingViewProps) {
     if (res.success && res.data) {
       setTrackingData(res.data);
     } else {
-      setError(res.error || "Pedido nÃ£o encontrado.");
+      setError(res.error || "Pedido não encontrado.");
       setTrackingData(null);
     }
   }
@@ -115,13 +116,13 @@ export function TrackingView({ initialCode = "" }: TrackingViewProps) {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
-      {/* FormulÃ¡rio de Busca */}
+      {/* Formulário de Busca */}
       <div className="bg-surface rounded-card border border-border p-6 sm:p-8 shadow-subtle">
         <h2 className="text-base font-bold text-ink mb-1 font-display">
           Localize seu pedido
         </h2>
         <p className="text-xs text-text-muted mb-6">
-          Insira o nÃºmero do seu pedido e o e-mail ou CPF cadastrado no momento da compra.
+          Insira o número do seu pedido e o e-mail ou CPF cadastrado no momento da compra.
         </p>
 
         <form onSubmit={handleSearch} className="space-y-4">
@@ -131,7 +132,7 @@ export function TrackingView({ initialCode = "" }: TrackingViewProps) {
                 htmlFor="orderNumberInput"
                 className="block text-xs font-semibold text-text mb-1.5"
               >
-                NÃºmero do Pedido
+                Número do Pedido
               </label>
               <input
                 id="orderNumberInput"
@@ -197,7 +198,7 @@ export function TrackingView({ initialCode = "" }: TrackingViewProps) {
                   <OrderStatusBadge status={trackingData.status} />
                 </div>
                 <p className="text-xs text-text-muted mt-1">
-                  OlÃ¡, <strong>{trackingData.customerFirstName}</strong>! Acompanhe o ciclo de fabricaÃ§Ã£o e despacho das suas peÃ§as.
+                  Olá, <strong>{trackingData.customerFirstName}</strong>! Acompanhe o ciclo de fabricação e despacho das suas peças.
                 </p>
               </div>
 
@@ -214,7 +215,7 @@ export function TrackingView({ initialCode = "" }: TrackingViewProps) {
             {/* Stepper / Timeline do Pedido */}
             {isCanceled ? (
               <div className="p-4 rounded-lg bg-neutral-100 text-neutral-700 text-xs">
-                Este pedido foi cancelado ou reembolsado. Em caso de dÃºvidas, contate nosso suporte.
+                Este pedido foi cancelado ou reembolsado. Em caso de dúvidas, contate nosso suporte.
               </div>
             ) : (
               <div className="space-y-3">
@@ -254,22 +255,22 @@ export function TrackingView({ initialCode = "" }: TrackingViewProps) {
 
                 <div className="p-3 bg-surface-alt/50 rounded-lg border border-border text-xs text-text-muted flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <strong>Prazos:</strong> {trackingData.productionDays} dias de produÃ§Ã£o 3D + {trackingData.carrierDays} dias de frete ({trackingData.shippingCarrier})
+                    <strong>Prazos:</strong> {trackingData.productionDays} dias de produção 3D + {trackingData.carrierDays} dias de frete ({trackingData.shippingCarrier})
                   </div>
                   <div className="text-ink font-semibold">
-                    Prazo total estimado: {trackingData.totalDeliveryDays} dias Ãºteis
+                    Prazo total estimado: {trackingData.totalDeliveryDays} dias úteis
                   </div>
                 </div>
               </div>
             )}
 
-            {/* CÃ³digo de Rastreamento (se despachado) */}
+            {/* Código de Rastreamento (se despachado) */}
             {trackingData.trackingCode && (
               <div className="p-4 rounded-lg bg-purple-50 border border-purple-200 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <span className="text-[10px] uppercase font-mono tracking-wider text-purple-700 font-bold block">
-                      CÃ³digo de Rastreamento ({trackingData.shippingCarrier})
+                      Código de Rastreamento ({trackingData.shippingCarrier})
                     </span>
                     <span className="text-xl font-bold font-mono text-purple-950 tracking-wider">
                       {trackingData.trackingCode}
@@ -289,7 +290,7 @@ export function TrackingView({ initialCode = "" }: TrackingViewProps) {
                       ) : (
                         <>
                           <Copy className="w-3.5 h-3.5 text-purple-700" />
-                          <span>Copiar CÃ³digo</span>
+                          <span>Copiar Código</span>
                         </>
                       )}
                     </button>
@@ -307,16 +308,16 @@ export function TrackingView({ initialCode = "" }: TrackingViewProps) {
               </div>
             )}
 
-            {/* Aviso quando em ProduÃ§Ã£o 3D */}
+            {/* Aviso quando em Produção 3D */}
             {trackingData.status === "EM_PRODUCAO" && (
               <div className="p-4 rounded-lg bg-cyan-50 border border-cyan-200 text-cyan-950 text-xs leading-relaxed flex items-start gap-3">
                 <Printer className="w-5 h-5 text-cyan-700 shrink-0 mt-0.5" />
                 <div>
                   <h4 className="font-bold mb-1">
-                    Suas peÃ§as estÃ£o sendo impressas em 3D!
+                    Suas peças estão sendo impressas em 3D!
                   </h4>
                   <p className="text-cyan-900/80">
-                    Na Markah Brasil, cada objeto Ã© impresso sob demanda com filamento premium biodegradÃ¡vel. O acabamento fino e a inspeÃ§Ã£o manual levam atÃ© {trackingData.productionDays} dias Ãºteis. Assim que o pacote for entregue Ã  transportadora, o cÃ³digo de rastreamento aparecerÃ¡ aqui e enviaremos um e-mail a vocÃª.
+                    Na Markah Brasil, cada objeto é impresso sob demanda com filamento premium biodegradável. O acabamento fino e a inspeção manual levam até {trackingData.productionDays} dias úteis. Assim que o pacote for entregue à transportadora, o código de rastreamento aparecerá aqui e enviaremos um e-mail a você.
                   </p>
                 </div>
               </div>
@@ -330,7 +331,7 @@ export function TrackingView({ initialCode = "" }: TrackingViewProps) {
                   <span>Aguardando Pagamento Pix (5% de Desconto)</span>
                 </div>
                 <p className="text-amber-900/80">
-                  Total: <strong>{formatCents(trackingData.finalAmountCents)}</strong>. Copie o cÃ³digo abaixo e pague no app do seu banco para que a impressÃ£o comece imediatamente:
+                  Total: <strong>{formatCents(trackingData.finalAmountCents)}</strong>. Copie o código abaixo e pague no app do seu banco para que a impressão comece imediatamente:
                 </p>
                 <div className="p-2.5 bg-white border border-dashed border-amber-300 rounded font-mono text-[11px] break-all">
                   {trackingData.pixQrCode}
@@ -340,7 +341,7 @@ export function TrackingView({ initialCode = "" }: TrackingViewProps) {
                   className="px-4 py-2 bg-amber-700 text-white font-semibold rounded-lg hover:bg-amber-800 text-xs flex items-center gap-1.5"
                 >
                   {copiedPix ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedPix ? "CÃ³digo Pix Copiado!" : "Copiar CÃ³digo Pix"}</span>
+                  <span>{copiedPix ? "Código Pix Copiado!" : "Copiar Código Pix"}</span>
                 </button>
               </div>
             )}
@@ -367,7 +368,7 @@ export function TrackingView({ initialCode = "" }: TrackingViewProps) {
                           {item.productName}
                         </span>
                         <span className="text-[11px] text-text-muted">
-                          {item.variantName} â€¢ {item.quantity}x
+                          {item.variantName} • {item.quantity}x
                         </span>
                       </div>
                     </div>
@@ -382,11 +383,11 @@ export function TrackingView({ initialCode = "" }: TrackingViewProps) {
             {/* Suporte no WhatsApp */}
             <div className="border-t border-border pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
               <span className="text-text-muted">
-                Alguma dÃºvida sobre a produÃ§Ã£o ou envio do seu pedido?
+                Alguma dúvida sobre a produção ou envio do seu pedido?
               </span>
               <a
                 href={`https://wa.me/${activeWhatsapp}?text=${encodeURIComponent(
-                  `OlÃ¡, gostaria de informaÃ§Ãµes sobre meu pedido #${trackingData.orderNumber}`
+                  `Olá, gostaria de informações sobre meu pedido #${trackingData.orderNumber}`
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"

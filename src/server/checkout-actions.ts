@@ -1,6 +1,7 @@
-﻿"use server";
+"use server";
 
 import { getStoreSettings } from "@/lib/settings-repository";
+
 import {
   saveOrder,
   getOrderById,
@@ -71,64 +72,64 @@ export interface CreateOrderResult {
 }
 
 /**
- * ValidaÃ§Ã£o bÃ¡sica de CPF (11 dÃ­gitos).
+ * Validação básica de CPF (11 dígitos).
  */
 function isValidCpf(rawCpf: string): boolean {
   const clean = rawCpf.replace(/\D/g, "");
   if (clean.length !== 11) return false;
-  // Bloqueia sequÃªncias repetidas comuns
+  // Bloqueia sequências repetidas comuns
   if (/^(\d)\1{10}$/.test(clean)) return false;
   return true;
 }
 
 /**
- * NÃºmero de pedido amigÃ¡vel e sem colisÃ£o prÃ¡tica (ex.: MKB-7K3Q9Z).
- * O formato antigo (5 dÃ­gitos aleatÃ³rios) colidia com poucas centenas de pedidos.
+ * Número de pedido amigável e sem colisão prática (ex.: MKB-7K3Q9Z).
+ * O formato antigo (5 dígitos aleatórios) colidia com poucas centenas de pedidos.
  */
 function generateOrderNumber(): string {
-  const alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"; // sem 0/O/1/I para evitar confusÃ£o
+  const alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"; // sem 0/O/1/I para evitar confusão
   const bytes = crypto.getRandomValues(new Uint8Array(6));
   const code = Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("");
   return `MKB-${code}`;
 }
 
 /**
- * Server Action principal de criaÃ§Ã£o e processamento de pedido.
- * Regra P-001: RecÃ¡lculo estrito de todos os preÃ§os no servidor.
+ * Server Action principal de criação e processamento de pedido.
+ * Regra P-001: Recálculo estrito de todos os preços no servidor.
  */
 export async function createOrderAction(
   payload: CheckoutPayload
 ): Promise<CreateOrderResult> {
   try {
-    // 1. ValidaÃ§Ãµes cadastrais
+    // 1. Validações cadastrais
     const customer = payload.customer;
     if (!customer.name || customer.name.trim().length < 3) {
-      return { success: false, error: "Nome completo Ã© obrigatÃ³rio." };
+      return { success: false, error: "Nome completo é obrigatório." };
     }
     if (!customer.email || !customer.email.includes("@")) {
-      return { success: false, error: "E-mail de contato invÃ¡lido." };
+      return { success: false, error: "E-mail de contato inválido." };
     }
     if (!customer.phone || customer.phone.replace(/\D/g, "").length < 10) {
-      return { success: false, error: "Telefone com DDD Ã© obrigatÃ³rio." };
+      return { success: false, error: "Telefone com DDD é obrigatório." };
     }
     if (!isValidCpf(customer.cpf)) {
-      return { success: false, error: "CPF informado Ã© invÃ¡lido." };
+      return { success: false, error: "CPF informado é inválido." };
     }
 
     const addr = payload.shippingAddress;
     const cleanCep = addr.postalCode.replace(/\D/g, "");
     if (cleanCep.length !== 8) {
-      return { success: false, error: "CEP de entrega invÃ¡lido." };
+      return { success: false, error: "CEP de entrega inválido." };
     }
     if (!addr.street || !addr.number || !addr.city || !addr.state) {
-      return { success: false, error: "Preencha todos os campos obrigatÃ³rios do endereÃ§o." };
+      return { success: false, error: "Preencha todos os campos obrigatórios do endereço." };
     }
 
     if (!payload.items || payload.items.length === 0) {
-      return { success: false, error: "O carrinho estÃ¡ vazio." };
+      return { success: false, error: "O carrinho está vazio." };
     }
 
-    // 2. Reconstitui os itens diretamente da fonte do catÃ¡logo no servidor (P-001)
+    // 2. Reconstitui os itens diretamente da fonte do catálogo no servidor (P-001)
     const orderItems: OrderItemRecord[] = [];
     const shippingItemsInput = [];
 
@@ -139,7 +140,7 @@ export async function createOrderAction(
       let foundProduct = null;
       let foundVariant = null;
 
-      // 1. Busca prioritÃ¡ria no banco de dados (Prisma)
+      // 1. Busca prioritária no banco de dados (Prisma)
       if (isDatabaseConfigured()) {
         try {
           const dbVariant = await db.productVariant.findUnique({
@@ -186,7 +187,7 @@ export async function createOrderAction(
         }
       }
 
-      // 2. Fallback somente se nÃ£o encontrou no banco
+      // 2. Fallback somente se não encontrou no banco
       if (!foundProduct || !foundVariant) {
         for (const p of SEED_PRODUCTS) {
           const v = p.variants.find((variant) => variant.id === clientItem.variantId);
@@ -201,7 +202,7 @@ export async function createOrderAction(
       if (!foundProduct || !foundVariant) {
         return {
           success: false,
-          error: `Produto ou variaÃ§Ã£o nÃ£o encontrado no catÃ¡logo (${clientItem.variantId}).`,
+          error: `Produto ou variação não encontrado no catálogo (${clientItem.variantId}).`,
         };
       }
 
@@ -209,7 +210,7 @@ export async function createOrderAction(
       const unitPriceCents = foundVariant.priceCents;
       const totalPriceCents = unitPriceCents * qty;
 
-      // Identifica a descriÃ§Ã£o completa da variaÃ§Ã£o e cores
+      // Identifica a descrição completa da variação e cores
       const variantName = formatVariantDisplayName(foundProduct, foundVariant);
       const variantColors = getVariantColors(foundProduct, foundVariant);
       const colorHex = variantColors[0]?.hex || null;
@@ -243,7 +244,7 @@ export async function createOrderAction(
       });
     }
 
-    // 3. ValidaÃ§Ã£o do cupom no servidor
+    // 3. Validação do cupom no servidor
     let appliedCoupon: AppliedCoupon | null = null;
     const initialSubtotalCents = orderItems.reduce((acc, i) => acc + i.totalPriceCents, 0);
 
@@ -281,9 +282,6 @@ export async function createOrderAction(
       shippingPriceCents: selectedQuote.originalPriceCents,
       cheapestShippingPriceCents: Math.min(...quotes.map((q) => q.originalPriceCents)),
       coupon: appliedCoupon,
-      pixDiscountPercent: settings.pixDiscountPercent,
-      freeShippingThresholdCents: settings.freeShippingThresholdCents,
-      maxInstallments: settings.maxInstallmentsFree,
     });
 
     const isPix = payload.paymentMethod === "PIX";
@@ -326,7 +324,7 @@ export async function createOrderAction(
       items: orderItems,
     };
 
-    // 7. Salva o pedido ANTES de cobrar: nunca pode existir cobranÃ§a sem pedido (D-019)
+    // 7. Salva o pedido ANTES de cobrar: nunca pode existir cobrança sem pedido (D-019)
     let saved = await saveOrder(newOrder, orderItems);
 
     // 8. Processamento do pagamento
@@ -345,7 +343,7 @@ export async function createOrderAction(
       if (!pixRes.success) {
         await updateOrderStatus(saved.id, "CANCELADO", "REJECTED");
         console.error("[checkout] Falha ao gerar Pix", orderNumber, pixRes.error);
-        return { success: false, error: pixRes.error || "NÃ£o foi possÃ­vel gerar o Pix agora. Tente novamente em instantes." };
+        return { success: false, error: pixRes.error || "Não foi possível gerar o Pix agora. Tente novamente em instantes." };
       }
 
       saved =
@@ -356,11 +354,11 @@ export async function createOrderAction(
           pixExpiresAt: pixRes.expiresAt,
         })) || saved;
     } else {
-      // CartÃ£o de CrÃ©dito (token gerado pelo Card Payment Brick)
+      // Cartão de Crédito (token gerado pelo Card Payment Brick)
       const cardData = payload.cardData;
       if (!cardData?.token) {
         await updateOrderStatus(saved.id, "CANCELADO", "REJECTED");
-        return { success: false, error: "Dados do cartÃ£o de crÃ©dito nÃ£o fornecidos." };
+        return { success: false, error: "Dados do cartão de crédito não fornecidos." };
       }
 
       const cardRes = await createCardPayment({
@@ -383,7 +381,7 @@ export async function createOrderAction(
           paymentStatus: "REJECTED",
           paymentId: cardRes.paymentId || null,
         });
-        return { success: false, error: cardRes.error || "Pagamento no cartÃ£o recusado." };
+        return { success: false, error: cardRes.error || "Pagamento no cartão recusado." };
       }
 
       const approved = cardRes.status === "approved";
@@ -402,7 +400,7 @@ export async function createOrderAction(
       await incrementCouponUsage(appliedCoupon.code);
     }
 
-    // 9. Envia e-mails (falha de e-mail nÃ£o pode derrubar um pedido jÃ¡ pago)
+    // 9. Envia e-mails (falha de e-mail não pode derrubar um pedido já pago)
     try {
       await sendOrderCreatedEmail(saved);
       if (saved.status === "PAGO") {
@@ -427,19 +425,19 @@ export async function createOrderAction(
     console.error("[checkout] Erro inesperado ao criar pedido", err);
     return {
       success: false,
-      error: "NÃ£o foi possÃ­vel finalizar o pedido agora. Tente novamente ou fale com a gente pelo WhatsApp.",
+      error: "Não foi possível finalizar o pedido agora. Tente novamente ou fale com a gente pelo WhatsApp.",
     };
   }
 }
 
 /**
- * Consulta status atualizado do pedido (usado na tela de confirmaÃ§Ã£o Pix para pooling automÃ¡tico).
+ * Consulta status atualizado do pedido (usado na tela de confirmação Pix para pooling automático).
  */
 export async function getOrderStatusAction(orderId: string) {
   try {
     const order = await getOrderById(orderId);
     if (!order) {
-      return { success: false, error: "Pedido nÃ£o encontrado." };
+      return { success: false, error: "Pedido não encontrado." };
     }
     let currentOrder = order;
     if (currentOrder.status === "AGUARDANDO_PAGAMENTO" && currentOrder.paymentId) {
